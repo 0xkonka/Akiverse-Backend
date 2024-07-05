@@ -1,0 +1,5 @@
+[pr-release "branch"]
+  staging = develop
+  production = master
+[pr-release]
+  template = .git-pr-template

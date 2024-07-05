@@ -1,0 +1,41 @@
+{
+  "family": "akiverse-staging-migration",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-migration",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/staging/migration",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "migration"
+        }
+      },
+      "command": ["/app/node_modules/.bin/prisma", "migrate", "deploy"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "staging"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/DATABASE_URL"
+        }
+      ]
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-staging-task-execution",
+  "taskRoleArn": "akiverse-staging-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

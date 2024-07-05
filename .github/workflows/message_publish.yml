@@ -1,0 +1,46 @@
+# フロントと特定ファイルを共有するためにnpm publishする
+name: message publish
+
+on:
+  push:
+    # 対象ブランチ
+    branches:
+      - develop
+    # 対象ファイル
+    paths:
+      - "src/models/external/**"
+
+jobs:
+  message-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 20.7.0
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@victgame"
+
+      # publishに使用するpackage.jsonとtsconfig.jsonをrootに移動
+      - name: cp package.json & tsconfig.json
+        run: |
+          cp ./publish_settings/publish-package.json ./package.json
+          cp ./publish_settings/publish-tsconfig.json ./publish-tsconfig.json
+
+      - name: yarn install
+        run: yarn install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: tsc
+        run: yarn tsc --p publish-tsconfig.json
+
+      - name: Publish npm package
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

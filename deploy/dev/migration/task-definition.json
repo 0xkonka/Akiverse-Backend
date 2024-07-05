@@ -1,0 +1,41 @@
+{
+  "family": "akiverse-dev-migration",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-migration",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/dev/migration",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "migration"
+        }
+      },
+      "command": ["/app/node_modules/.bin/prisma", "migrate", "deploy"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "dev"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/DATABASE_URL"
+        }
+      ]
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-dev-task-execution",
+  "taskRoleArn": "akiverse-dev-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

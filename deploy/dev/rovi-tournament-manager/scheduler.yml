@@ -1,0 +1,19 @@
+region: ap-south-1
+cluster: akiverse-dev
+role: akiverse-dev-task-execution
+rules:
+  - name: akiverse-dev-rovi-tournament-manager
+    scheduleExpression: cron(10 * * * ? *) # 毎時10分に起動  https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html
+    taskDefinition: akiverse-dev-rovi-tournament-manager
+    group: scheduled:akiverse-dev-rovi-tournament-manager
+    platform_version: 1.4.0
+    launch_type: FARGATE
+    network_configuration:
+      aws_vpc_configuration:
+        subnets:
+          - subnet-0824da2b7b85d8a4e # private subnet
+          - subnet-09d76976f1fc49ea0 # private subnet
+          - subnet-05f230b5654e1a86a # private subnet
+        security_groups:
+          - sg-0ec95a01dab7d53c0 # common
+        assign_public_ip: ENABLED

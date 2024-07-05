@@ -1,0 +1,19 @@
+region: ap-south-1
+cluster: akiverse-staging
+role: akiverse-staging-task-execution
+rules:
+  - name: akiverse-staging-fee-collector
+    scheduleExpression: cron(1 15 * * ? *) # JST 0:01 am every day  https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html
+    taskDefinition: akiverse-staging-fee-collector
+    group: scheduled:akiverse-staging-fee-collector
+    platform_version: 1.4.0
+    launch_type: FARGATE
+    network_configuration:
+      aws_vpc_configuration:
+        subnets:
+          - subnet-0c7d3326e0514d790 # private subnet
+          - subnet-0f291534c316cdd94 # private subnet
+          - subnet-0f8696ebf3e9a3757 # private subnet
+        security_groups:
+          - sg-09f9b24a684f783a0 # common
+        assign_public_ip: ENABLED

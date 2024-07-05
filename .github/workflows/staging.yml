@@ -1,0 +1,158 @@
+name: Deploy staging environemnt
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    uses: ./.github/workflows/build_and_push.yml
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+      personal_access_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+  migration:
+    needs: build
+    uses: ./.github/workflows/oneshot_task.yml
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'migration'
+      subnet_ids: 'subnet-0c7d3326e0514d790,subnet-0f291534c316cdd94,subnet-0f8696ebf3e9a3757'
+      security_group_ids: 'sg-09f9b24a684f783a0'
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  api:
+    needs: migration
+    uses: ./.github/workflows/ecs_service_deployment.yml
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'api'
+      repository_name: 'api'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  watcher:
+    uses: ./.github/workflows/ecs_service_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'watcher'
+      repository_name: 'watcher'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  confirmer:
+    uses: ./.github/workflows/ecs_service_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'confirmer'
+      repository_name: 'confirmer'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  executor:
+    uses: ./.github/workflows/ecs_service_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'executor'
+      repository_name: 'executor'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  play-manager:
+    uses: ./.github/workflows/ecs_service_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'play-manager'
+      repository_name: 'play_manager'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  fee-collector:
+    uses: ./.github/workflows/ecs_scheduler_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'fee-collector'
+      repository_name: 'fee_collector'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  pfp-icon-checker:
+    uses: ./.github/workflows/ecs_scheduler_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'pfp-icon-checker'
+      repository_name: 'pfp_icon_checker'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  rovi-tournament-manager:
+    uses: ./.github/workflows/ecs_scheduler_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'rovi-tournament-manager'
+      repository_name: 'rovi_tournament_manager'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'
+
+  paid-tournament-manager:
+    uses: ./.github/workflows/ecs_scheduler_deployment.yml
+    needs: api
+    with:
+      project_name: 'akiverse'
+      stage: 'staging'
+      role_name: 'paid-tournament-manager'
+      repository_name: 'paid_tournament_manager'
+      firelens_config_bucket: "akiverse-staging-firelens-config-6a7ce5b1b1566e49"
+    secrets:
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING_MUMBAI }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING_MUMBAI }}
+      aws_region: 'ap-south-1'

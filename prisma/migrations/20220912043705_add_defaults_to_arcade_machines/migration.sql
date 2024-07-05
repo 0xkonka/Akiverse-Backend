@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "arcade_machines" ALTER COLUMN "fuel" SET DEFAULT 0,
+ALTER COLUMN "max_fuel" SET DEFAULT 0,
+ALTER COLUMN "energy" SET DEFAULT 0,
+ALTER COLUMN "max_energy" SET DEFAULT 0,
+ALTER COLUMN "boost" SET DEFAULT 1;

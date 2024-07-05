@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BannerImageType" ADD VALUE 'PAID_TOURNAMENT';

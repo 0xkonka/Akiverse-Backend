@@ -1,0 +1,72 @@
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        required: true
+        type: string
+        description: project name
+      stage:
+        required: true
+        type: string
+        description: stage
+      role_name:
+        required: true
+        type: string
+        description: role name. Basically a kebab case.
+      repository_name:
+        required: true
+        type: string
+        description: ECR repository name(exclude registry name).Basically a snake case.
+      firelens_config_bucket:
+        required: true
+        type: string
+        description: firelens config bucket name
+    secrets:
+      aws_access_key_id:
+        required: true
+        description: aws access key
+      aws_secret_access_key:
+        required: true
+        description: aws secret access key
+      aws_region:
+        required: true
+        description: aws region
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ secrets.aws_region }}
+
+      - name: upload firelens config
+        run: |
+          aws s3 cp deploy/${{ inputs.stage }}/${{ inputs.role_name }}/extra.conf s3://${{ inputs.firelens_config_bucket }}/${{ inputs.stage }}/${{ inputs.role_name }}/extra.conf
+          aws s3 cp deploy/${{ inputs.stage }}/${{ inputs.role_name }}/parser.conf s3://${{ inputs.firelens_config_bucket }}/${{ inputs.stage }}/${{ inputs.role_name }}/parser.conf
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Fill in new image ID in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.1.2
+        with:
+          task-definition: deploy/${{ inputs.stage }}/${{ inputs.role_name }}/task-definition.json
+          container-name: ${{ inputs.project_name }}-${{ inputs.role_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/${{ inputs.repository_name }}:${{ github.sha }}
+
+      - name: Deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          cluster: ${{ inputs.project_name }}-${{ inputs.stage }}
+          service: ${{ inputs.project_name }}-${{ inputs.stage }}-${{ inputs.role_name }}
+          wait-for-service-stability: true

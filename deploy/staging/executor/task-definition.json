@@ -1,0 +1,126 @@
+{
+  "family": "akiverse-staging-executor",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-executor",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "executor.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "staging"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "test"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_ADDRESS",
+          "value": "0x468Ee0ff6F02b7dEaf4345C9faf36D660270c012"
+        },
+        {
+          "name": "GAME_CENTERS_CONTRACT_ADDRESS",
+          "value": "0xB6B652E5645c0Dd8eb0fdD8C37b7fe5BD0517053"
+        },
+        {
+          "name": "ARCADE_MACHINES_CONTRACT_ADDRESS",
+          "value": "0x39A601a18aA7FE686B79045a4754D7b8F966D769"
+        },
+        {
+          "name": "ARCADE_PARTS_CONTRACT_ADDRESS",
+          "value": "0x5e96F7fd8066B7c1948d3e4fc0774F72Ce0c4091"
+        },
+        {
+          "name": "JSON_RPC_PROVIDER",
+          "value": "https://rpc-amoy.polygon.technology"
+        },
+        {
+          "name": "GAS_PRICE_ADJUSTMENT_RATIO",
+          "value": "1.03"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "AKIR_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/AKIR_SIGNER_KEY"
+        },
+        {
+          "name": "AM_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/AM_SIGNER_KEY"
+        },
+        {
+          "name": "AP_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/AP_SIGNER_KEY"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/DATABASE_URL"
+        },
+        {
+          "name": "MORALIS_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/MORALIS_API_KEY"
+        },
+        {
+          "name": "MAGIC_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/MAGIC_SECRET_KEY"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/AKIVERSE_LOCKER_SIGNER_KEY"
+        },
+        {
+          "name": "USDC_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/USDC_SIGNER_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/staging/executor",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-staging-firelens-config-6a7ce5b1b1566e49/staging/executor/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-staging-firelens-config-6a7ce5b1b1566e49/staging/executor/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "akiverse-staging-task-execution",
+  "taskRoleArn": "akiverse-staging-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

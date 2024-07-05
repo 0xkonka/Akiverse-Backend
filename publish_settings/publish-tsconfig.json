@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "lib": ["esnext", "dom"],
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "noErrorTruncation": true,
+    "target": "ESNEXT",
+    "declaration": true
+  },
+  "include": ["src/models/external/"],
+  "exclude": ["dist", "node_modules"]
+}

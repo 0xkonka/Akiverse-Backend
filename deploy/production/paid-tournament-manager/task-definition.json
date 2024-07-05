@@ -1,0 +1,98 @@
+{
+  "family": "akiverse-production-paid-tournament-manager",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-paid-tournament-manager",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "paid_tournament_manager.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "production"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://w.redis.akiverse.io.production.internal:6379"
+        },
+        {
+          "name": "SPN_PAY_IS_SANDBOX",
+          "value": "false"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/DATABASE_URL"
+        },
+        {
+          "name": "FIREBASE_PROJECT_ID",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/FIREBASE_PROJECT_ID"
+        },
+        {
+          "name": "FIREBASE_CLIENT_EMAIL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/FIREBASE_CLIENT_EMAIL"
+        },
+        {
+          "name": "FIREBASE_PRIVATE_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/FIREBASE_PRIVATE_KEY"
+        },
+        {
+          "name": "SPN_PAY_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/SPN_PAY_KEY"
+        },
+        {
+          "name": "SPN_PAY_SECRET",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/SPN_PAY_SECRET"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/production/paid-tournament-manager",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/paid-tournament-manager/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/paid-tournament-manager/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-production-task-execution",
+  "taskRoleArn": "akiverse-production-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

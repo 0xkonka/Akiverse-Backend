@@ -1,0 +1,174 @@
+name: Build docker image and push
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        required: true
+        type: string
+        description: project name
+      stage:
+        required: true
+        type: string
+        description: stage
+
+    secrets:
+      aws_access_key_id:
+        required: true
+        description: aws access key
+      aws_secret_access_key:
+        required: true
+        description: aws secret access key
+      aws_region:
+        required: true
+        description: aws region
+      personal_access_token:
+        required: true
+        description: github personal access token
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ secrets.aws_region }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push server image to ECR
+        id: build-server
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/api
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/api
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target server --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push migration image to ECR
+        id: build-migration
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/migration
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/migration
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target migration --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push confirmer image to ECR
+        id: build-confirmer
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/confirmer
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/confirmer
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target confirmer --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+      - name: Build and Push executor image to ECR
+        id: build-executor
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/executor
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/executor
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target executor --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push watcher image to ECR
+        id: build-watcher
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/watcher
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/watcher
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target watcher --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push Fee Collector image to ECR
+        id: build-fee-collector
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/fee_collector
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/fee_collector
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target fee_collector --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push Play Manager image to ECR
+        id: build-play-manager
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/play_manager
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/play_manager
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target play_manager --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push PFP icon checker image to ECR
+        id: build-pfp-icon-checker
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/pfp_icon_checker
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/pfp_icon_checker
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target pfp_icon_checker --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push Rovi tournament manager image to ECR
+        id: build-rovi-tournament-manager
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/rovi_tournament_manager
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/rovi_tournament_manager
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target rovi_tournament_manager --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi
+
+      - name: Build and Push Paid tournament manager image to ECR
+        id: build-paid-tournament-manager
+        env:
+          REPOSITORY: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/paid_tournament_manager
+          REPOSITORY_NAME: ${{ inputs.project_name }}/${{ inputs.stage }}/paid_tournament_manager
+          VERSION: ${{ github.sha }}
+        run: |
+          tags=$(aws ecr list-images --repository-name $REPOSITORY_NAME --query "imageIds[*].imageTag")
+          if ! `echo ${tags[@]} | grep -q $VERSION` ; then
+            docker build . -t $REPOSITORY:$VERSION --target paid_tournament_manager --build-arg NODE_AUTH_TOKEN=${{ secrets.personal_access_token }}
+            docker push $REPOSITORY:$VERSION
+          fi

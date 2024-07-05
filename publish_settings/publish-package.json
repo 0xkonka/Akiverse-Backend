@@ -1,0 +1,19 @@
+{
+  "name": "@victgame/akiverse-backend",
+  "version": "0.4.0",
+  "description": "Port of the akiverse-api Golang repo",
+  "author": "Vict",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "*"
+  },
+  "dependencies": {
+    "zod": "^3.21.4",
+    "dayjs": "^1.11.6"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "files": ["dist/"]
+}

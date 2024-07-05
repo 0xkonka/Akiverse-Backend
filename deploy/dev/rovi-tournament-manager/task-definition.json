@@ -1,0 +1,78 @@
+{
+  "family": "akiverse-dev-rovi-tournament-manager",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-rovi-tournament-manager",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "index.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "dev"
+        },
+        {
+          "name": "ROVI_WEBHOOK_DOMAIN",
+          "value": "https://be.khelo-91.com"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/DATABASE_URL"
+        },
+        {
+          "name": "ROVI_BATCH_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/ROVI_BATCH_API_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/dev/rovi-tournament-manager",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/rovi-tournament-manager/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/rovi-tournament-manager/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-dev-task-execution",
+  "taskRoleArn": "akiverse-dev-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

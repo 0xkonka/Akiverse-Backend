@@ -1,0 +1,1493 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator typegraphql {
+  provider = "typegraphql-prisma"
+}
+
+// data types
+enum WithdrawalState {
+  UNPROCESSED
+  PENDING
+  CONFIRMED
+  ERROR
+
+  @@map("withdrawal_state")
+}
+
+enum DepositState {
+  UNPROCESSED
+  PENDING
+  CONFIRMED
+  INVALIDATED
+
+  @@map("deposit_state")
+}
+
+enum CurrencyType {
+  AKIR
+  AKV
+  USDC
+
+  @@map("currency_type")
+}
+
+enum NftType {
+  ARCADE_PART
+  ARCADE_MACHINE
+  GAME_CENTER
+
+  @@map("nft_type")
+}
+
+enum NftState {
+  IN_AKIVERSE
+  MOVING_TO_WALLET
+  IN_WALLET
+  MOVING_TO_AKIVERSE
+  BURNING
+  BURNED
+
+  @@map("nft_state")
+}
+
+enum BlockScanState {
+  MISSED
+  WATCHED
+  SCANNED
+
+  @@map("block_scan_state")
+}
+
+enum BlockState {
+  CONFIRMED
+  PENDING
+  INVALIDATED
+
+  @@map("block_state")
+}
+
+enum TransferState {
+  CONFIRMED
+  PENDING
+  INVALIDATED
+  FROZEN
+
+  @@map("transfer_state")
+}
+
+enum GameCenterSize {
+  SMALL
+  MEDIUM
+  LARGE
+
+  @@map("game_center_size")
+}
+
+enum GameCenterArea {
+  AKIHABARA
+  SHIBUYA
+
+  @@map("game_center_area")
+}
+
+enum ArcadePartCategory {
+  ROM
+  ACCUMULATOR
+  UPPER_CABINET
+  LOWER_CABINET
+
+  @@map("arcade_part_category")
+}
+
+enum PlaySessionState {
+  READY
+  PLAYING
+  FINISHED
+
+  @@map("play_session_state")
+}
+
+enum PlayResult {
+  WIN
+  LOSS
+  DISCONNECTED
+
+  @@map("play_result")
+}
+
+enum WithdrawalType {
+  MINT
+  TRANSFER
+}
+
+enum CollectState {
+  UNPROCESSED
+  COLLECTED
+  UNINSTALLED
+
+  @@map("collect_state")
+}
+
+enum PaymentState {
+  UNPROCESSED
+  PAID
+
+  @@map("payment_state")
+}
+
+enum NotificationType {
+  ACTIVITY
+  INFORMATION
+
+  @@map("notification_type")
+}
+
+enum RewardItemType {
+  TERAS
+  ARCADE_PART
+  JUNK_PART
+  COLLECTIBLE_ITEM
+
+  @@map("reward_item_type")
+}
+
+enum RewardCategory {
+  ROM
+  ACCUMULATOR
+  UPPER_CABINET
+  LOWER_CABINET
+  TERAS
+  ICON
+  TITLE
+  FRAME
+
+  @@map("reward_category")
+}
+
+enum IconType {
+  IN_WORLD
+  NFT
+
+  @@map("icon_type")
+}
+
+enum FrontEndType {
+  WM
+  GP
+
+  @@map("front_end_type")
+}
+
+enum BurnState {
+  UNPROCESSED
+  PENDING
+  CONFIRMED
+  ERROR
+
+  @@map("burn_state")
+}
+
+// models
+model User {
+  // common fields
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+  name             String
+  email            String    @unique
+  walletAddress    String?   @unique @map("wallet_address") // case-insensitive
+  akirBalance      Decimal   @default(0) @map("akir_balance") @db.Decimal(78, 0)
+  akvBalance       Decimal   @default(0) @map("akv_balance") @db.Decimal(78, 0)
+  terasBalance     Decimal   @default(0) @map("teras_balance") @db.Decimal(78, 0)
+  iconType         IconType  @default(IN_WORLD) @map("icon_type")
+  iconSubCategory  String    @default("DEFAULT") @map("icon_sub_category")
+  frameSubCategory String    @default("DEFAULT") @map("frame_sub_category")
+  titleSubCategory String    @default("DEFAULT") @map("title_sub_category")
+  lockedAt         DateTime? @map("locked_at")
+  tickets          Int       @default(0)
+  admin            Boolean   @default(false)
+
+  // relation fields
+  arcadeMachines                 ArcadeMachine[]
+  arcadeParts                    ArcadePart[]
+  gameCenters                    GameCenter[]
+  /// @TypeGraphQL.omit(output: true, input: true)
+  withdrawals                    Withdrawal[]
+  playSessions                   PlaySession[]        @relation("player")
+  ownedGameCenterPlaySessions    PlaySession[]        @relation("gameCenterOwner")
+  ownedArcadeMachinePlaySessions PlaySession[]        @relation("arcadeMachineOwner")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  magicSessions                  MagicSession[]
+  /// @TypeGraphQL.omit(output: true, input: true)
+  currencyWithdrawals            CurrencyWithdrawal[]
+  deposits                       Deposit[]
+  notifications                  Notification[]
+
+  // Check constraints:
+  // 20230227144550_add_user_constraint
+  // akirBalance:akir_balance_over_zero CHECK ( akir_balance >= 0 )
+  // akvBalance:akv_balance_over_zero CHECK ( akv_balance >= 0)
+  // 20230329001523_add_teras_balance_and_rename_akir_reward_to_teras_reward
+  // terasBalance:teras_balance_over_zero CHECK (teras_balance >= 0)
+  crafts                             Craft[]
+  /// @TypeGraphQL.omit(output: true, input: true)
+  refreshTokens                      RefreshToken[]
+  junks                              Junk[]
+  extracts                           Extract[]
+  rewards                            Reward[]
+  collectibleItem                    CollectibleItem[]
+  questChains                        QuestChain[]
+  currencyDeposits                   CurrencyDeposit[]
+  Dismantle                          Dismantle[]
+  Burn                               Burn[]
+  /// @TypeGraphQL.omit(output: true, input: true)
+  googleOneTimePurchases             GoogleOneTimePurchase[]
+  paidTournamentEntries              PaidTournamentEntry[]
+  /// @TypeGraphQL.omit(output: true, input: true)
+  ticketTransactions                 TicketTransaction[]
+  activeBoosters                     ActiveBooster[]
+  activeBoosterForTournaments        ActiveBoosterForTournament[]
+  paidTournamentPrizeClaimIgnoreUser PaidTournamentPrizeClaimIgnoreUser?
+
+  @@map("users")
+}
+
+model MoralisSession {
+  // challenge request response contents
+  challengeId   String   @id @map("challenge_id")
+  message       String
+  profileId     String   @map("profile_id")
+  // challenge verify response contents
+  version       String?
+  nonce         String?
+  // provided by user
+  walletAddress String   @map("wallet_address") // case-insensitive
+  network       String
+  chain         String
+  // generated in backend
+  tokenHash     String   @unique @map("token_hash")
+  verified      Boolean  @default(false)
+  // timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  expiresAt     DateTime @map("expires_at")
+
+  @@map("moralis_sessions")
+}
+
+model MagicSession {
+  issuer      String   @id
+  userId      String?  @map("user_id") @db.Uuid
+  user        User?    @relation(fields: [userId], references: [id])
+  lastLoginAt DateTime @map("last_login_at")
+
+  @@map("magic_sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String?  @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+model ArcadeMachine {
+  // common fields
+  // ランダムに生成されます。生成する方法が雑なので要調整。
+  // 1048576 = 2^20
+  // 8388608 = 2^23
+  // このコードの省略は要注意。例えば、::double precisionのキャストを削除すると
+  // postgres側で生成されます。意味が変わらないが、スキーマ側の文章と異なる文章
+  // になるので、prismaから見てスキーマとDBの差として検知されてしまい、また新しい
+  // migrationが自動生成されます。
+  id        String   @id @default(dbgenerated("((((floor((random() * (1048576)::double precision)))::bigint + ((floor((random() * (1048576)::double precision)))::bigint << 20)) + ((floor((random() * (8388608)::double precision)))::bigint << 40)))::text"))
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  userId                String?  @map("user_id") @db.Uuid
+  user                  User?    @relation(fields: [userId], references: [id])
+  // token fields
+  /// @TypeGraphQL.omit(output: true)
+  ownerWalletAddress    String?  @map("owner_wallet_address") // case-insensitive
+  /// @TypeGraphQL.omit(output: true, input: true)
+  physicalWalletAddress String?  @map("physical_wallet_address") // case-insensitive
+  state                 NftState @default(IN_AKIVERSE)
+  /// @TypeGraphQL.omit(output: true)
+  lastBlock             Int      @default(0) @map("last_block")
+  /// @TypeGraphQL.omit(output: true)
+  lastTransactionIndex  Int      @default(0) @map("last_transaction_index")
+
+  // arcade machine fields
+  game            String
+  energy          Int       @default(0)
+  maxEnergy       Int       @default(0) @map("max_energy")
+  extractedEnergy Int       @default(0) @map("extracted_energy")
+  boost           Float     @default(1)
+  autoRenewLease  Boolean   @default(false) @map("auto_renew_lease")
+  // game center fields
+  gameCenterId    String?   @map("game_center_id")
+  position        Int? // 1 based indexing. Check Constraint exist
+  installedAt     DateTime? @map("installed_at")
+
+  // relation fields
+  gameCenter   GameCenter?   @relation(fields: [gameCenterId], references: [id])
+  playSessions PlaySession[]
+  // Check constraints:
+  // 20221012021851_add_positon_value_check_constraint:
+  // position >= 1
+  // 20221013061342_create_withdrawals:
+  // game_center_id is null and position is null or state = 'IN_AKIVERSE'
+
+  accumulatorSubCategory  String     @map("accumulator_sub_category")
+  upperCabinetSubCategory String     @default("PLAIN") @map("upper_cabinet_sub_category")
+  lowerCabinetSubCategory String     @default("PLAIN") @map("lower_cabinet_sub_category")
+  craft                   Craft?
+  extracts                Extract[]
+  feverSparkRemain        Int?       @map("fever_spark_remain") // null or 0 <= n <=30
+  destroyedAt             DateTime?  @map("destroyed_at")
+  dismantle               Dismantle?
+
+  @@unique([gameCenterId, position])
+  @@index([userId])
+  @@index([gameCenterId])
+  @@map("arcade_machines")
+}
+
+model ArcadePart {
+  // common fields
+  id                    String   @id @default(dbgenerated("((((floor((random() * (1048576)::double precision)))::bigint + ((floor((random() * (1048576)::double precision)))::bigint << 20)) + ((floor((random() * (8388608)::double precision)))::bigint << 40)))::text"))
+  createdAt             DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+  userId                String?  @map("user_id") @db.Uuid
+  user                  User?    @relation(fields: [userId], references: [id])
+  // token fields
+  /// @TypeGraphQL.omit(output: true)
+  ownerWalletAddress    String?  @map("owner_wallet_address") // case-insensitive
+  /// @TypeGraphQL.omit(output: true, input: true)
+  physicalWalletAddress String?  @map("physical_wallet_address") // case-insensitive
+  state                 NftState @default(IN_AKIVERSE)
+  /// @TypeGraphQL.omit(output: true)
+  lastBlock             Int      @default(0) @map("last_block")
+  /// @TypeGraphQL.omit(output: true)
+  lastTransactionIndex  Int      @default(0) @map("last_transaction_index")
+
+  // arcade part fields
+  category    ArcadePartCategory
+  subCategory String             @map("sub_category")
+  destroyedAt DateTime?          @map("destroyed_at")
+  craftId     String?            @map("craft_id") @db.Uuid
+  craft       Craft?             @relation(fields: [craftId], references: [id])
+  usedJunks   Int?               @map("used_junks")
+
+  createDismantle   Dismantle? @relation(fields: [createDismantleId], references: [id])
+  createDismantleId String?    @map("create_dismantle_id") @db.Uuid
+
+  @@index([userId])
+  @@index([craftId])
+  @@map("arcade_parts")
+}
+
+model GameCenter {
+  // common fields
+  id        String   @id
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  userId    String?  @map("user_id") @db.Uuid
+
+  // token fields
+  /// @TypeGraphQL.omit(output: true)
+  ownerWalletAddress    String?  @map("owner_wallet_address") // case-insensitive
+  /// @TypeGraphQL.omit(output: true, input: true)
+  physicalWalletAddress String?  @map("physical_wallet_address") // case-insensitive
+  state                 NftState @default(IN_AKIVERSE)
+  name                  String
+  /// @TypeGraphQL.omit(output: true)
+  lastBlock             Int      @default(0) @map("last_block")
+  /// @TypeGraphQL.omit(output: true)
+  lastTransactionIndex  Int      @default(0) @map("last_transaction_index")
+
+  // game center fields
+  xCoordinate      Int            @map("x_coordinate")
+  yCoordinate      Int            @map("y_coordinate")
+  area             GameCenterArea
+  size             GameCenterSize
+  placementAllowed Boolean        @default(false) @map("placement_allowed")
+
+  // relation fields
+  user           User?           @relation(fields: [userId], references: [id])
+  arcadeMachines ArcadeMachine[]
+  playSessions   PlaySession[]
+
+  // Check constraints:
+  // 20221013061342_create_withdrawals:
+  // placement_allowed = false or state = 'IN_AKIVERSE'
+  @@index([userId])
+  @@map("game_centers")
+}
+
+model Withdrawal {
+  // common fields
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+  // Token reference
+  tokenId       String          @map("token_id")
+  nftType       NftType         @map("nft_type")
+  // Withdrawal fields
+  userId        String?         @map("user_id") @db.Uuid
+  user          User?           @relation(fields: [userId], references: [id])
+  walletAddress String          @map("wallet_address") // case-insensitive
+  state         WithdrawalState @default(UNPROCESSED) @map("withdrawal_state")
+  type          WithdrawalType?
+  hash          String?
+  nonce         Int?
+  response      String?
+  signerAddress String?         @map("signer_address") // case-insensitive
+  errorMessage  String?
+
+  @@index([userId])
+  @@map("withdrawals")
+}
+
+model CurrencyWithdrawal {
+  // common fields
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+  // Currency and amount
+  currencyType  CurrencyType    @map("currency_type")
+  amount        Decimal         @default(0) @db.Decimal(78, 0) // ルール付けたい 必ず0以上
+  // CurrencyWithdrawal fields
+  userId        String?         @map("user_id") @db.Uuid
+  user          User?           @relation(fields: [userId], references: [id])
+  walletAddress String          @map("wallet_address") // case-insensitive
+  state         WithdrawalState @default(UNPROCESSED) @map("withdrawal_state")
+  type          WithdrawalType?
+  hash          String?
+  nonce         Int?
+  response      String?
+  signerAddress String?         @map("signer_address") // case-insensitive
+  errorMessage  String?         @map("error_message")
+
+  @@map("currency_withdrawals")
+}
+
+model Deposit {
+  // common fields
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+  // Token reference
+  tokenId       String       @map("token_id")
+  nftType       NftType      @map("nft_type")
+  // Deposit fields
+  userId        String?      @map("user_id") @db.Uuid
+  user          User?        @relation(fields: [userId], references: [id])
+  walletAddress String?      @map("wallet_address") // case-insensitive
+  state         DepositState @default(UNPROCESSED) @map("deposit_state")
+  hash          String?
+
+  @@index([userId])
+  @@map("deposits")
+}
+
+model Burn {
+  // common fields
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  // Token reference
+  tokenId       String    @map("token_id")
+  nftType       NftType   @map("nft_type")
+  // burn fields
+  userId        String?   @map("user_id") @db.Uuid
+  user          User?     @relation(fields: [userId], references: [id])
+  state         BurnState @default(UNPROCESSED) @map("burn_state")
+  hash          String?
+  nonce         Int?
+  response      String?
+  signerAddress String?   @map("signer_address") // case-insensitive
+  errorMessage  String?
+
+  @@index([userId])
+  @@map("burns")
+}
+
+model CurrencyDeposit {
+  // common fields
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+  // Currency and amount
+  currencyType  CurrencyType @map("currency_type")
+  amount        Decimal      @default(0) @db.Decimal(78, 0)
+  // Deposit fields
+  userId        String       @map("user_id") @db.Uuid
+  user          User         @relation(fields: [userId], references: [id])
+  walletAddress String       @map("wallet_address") // case-insensitive
+  state         DepositState @default(UNPROCESSED) @map("deposit_state")
+  hash          String
+
+  @@index([userId])
+  @@index([hash, walletAddress])
+  @@map("currency_deposits")
+}
+
+model Transfer {
+  // common fields
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+  // transaction fields
+  blockNumber      Int           @map("block_number")
+  blockHash        String        @map("block_hash")
+  transactionIndex Int           @map("transaction_index")
+  transactionHash  String        @map("transaction_hash")
+  state            TransferState @default(PENDING)
+  // transfer fields
+  nftType          NftType       @map("nft_type")
+  from             String
+  to               String
+  tokenId          String        @map("token_id")
+
+  @@unique([blockHash, transactionIndex, from, to, tokenId])
+  @@index([blockHash])
+  @@index([state])
+  @@index([tokenId])
+  @@map("transfers")
+}
+
+model CurrencyTransfer {
+  // common fields
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+  // transaction fields
+  blockNumber      Int           @map("block_number")
+  blockHash        String        @map("block_hash")
+  transactionIndex Int           @map("transaction_index")
+  transactionHash  String        @map("transaction_hash")
+  state            TransferState @default(PENDING)
+  // transfer fields
+  currencyType     CurrencyType  @map("currency_type")
+  from             String
+  to               String
+  amount           Decimal       @default(0) @db.Decimal(78, 0)
+
+  @@unique([blockHash, transactionIndex, from, to, amount])
+  @@index([blockHash])
+  @@index([state])
+  @@map("currency_transfers")
+}
+
+model Block {
+  // common fields
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @default(now()) @updatedAt @map("updated_at")
+  // token fields
+  number     Int
+  hash       String         @unique
+  parentHash String         @map("parent_hash")
+  state      BlockState     @default(PENDING)
+  scanState  BlockScanState @default(WATCHED) @map("scan_state")
+
+  @@index([parentHash])
+  @@index([number])
+  @@index([state])
+  @@index([scanState])
+  @@map("blocks")
+}
+
+model Play {
+  // common fields
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime    @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt         DateTime    @default(now()) @updatedAt @map("updated_at")
+  playSessionId     String      @map("play_session_id") @db.Uuid
+  // unique constraint ON plays (play_session_id) WHERE (result is null)
+  endedAt           DateTime?   @map("ended_at")
+  score             Int?
+  result            PlayResult?
+  playSession       PlaySession @relation(fields: [playSessionId], references: [id])
+  ownerTerasReward  Decimal?    @map("owner_teras_reward") @db.Decimal(78, 0)
+  playerTerasReward Decimal?    @map("player_teras_reward") @db.Decimal(78, 0)
+  megaSpark         Boolean     @default(false) @map("mega_spark")
+  terasBoosterRatio Float?      @map("teras_booster_ratio")
+
+  @@index([playSessionId])
+  @@index([endedAt])
+  @@index([result])
+  @@map("plays")
+}
+
+model PlaySession {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt            DateTime         @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at")
+  endedAt              DateTime?        @map("ended_at")
+  playerId             String           @map("player_id") @db.Uuid
+  // unique constraint ON play_sessions (player_id) WHERE (state <> 'FINISHED')
+  arcadeMachineId      String           @map("arcade_machine_id")
+  // unique constraint ON play_sessions (arcade_machine_id) WHERE (state <> 'FINISHED')
+  // This constraint has been disabled in CBT2
+  arcadeMachineOwnerId String           @map("arcade_machine_owner_id") @db.Uuid
+  gameCenterId         String?          @map("game_center_id")
+  gameCenterOwnerId    String?          @map("game_center_owner_id") @db.Uuid
+  difficulty           Int?
+  targetScore          Int?             @map("target_score")
+  maxPlayCount         Int?             @map("max_play_count")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  authToken            String           @unique @map("auth_token")
+  state                PlaySessionState
+  fever                Boolean          @default(false)
+
+  // relation fields
+  arcadeMachine      ArcadeMachine @relation(fields: [arcadeMachineId], references: [id])
+  arcadeMachineOwner User?         @relation("arcadeMachineOwner", fields: [arcadeMachineOwnerId], references: [id])
+  gameCenter         GameCenter?   @relation(fields: [gameCenterId], references: [id])
+  gameCenterOwner    User?         @relation("gameCenterOwner", fields: [gameCenterOwnerId], references: [id])
+  player             User          @relation("player", fields: [playerId], references: [id])
+  plays              Play[]
+
+  @@index([playerId])
+  @@index([arcadeMachineId])
+  @@index([arcadeMachineOwnerId])
+  @@index([gameCenterId])
+  @@index([gameCenterOwnerId])
+  @@index([createdAt])
+  @@index([state])
+  @@map("play_sessions")
+}
+
+model GameSetting {
+  game      String   @id
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  dailyMaxPlayCount Int  @map("daily_max_play_count")
+  difficulty        Int?
+  targetScore       Int? @map("target_score")
+  // EASY_MODEのブースターが有効な時に使われる値
+  easyDifficulty    Int? @map("easy_difficulty")
+  easyTargetScore   Int? @map("easy_target_score")
+
+  @@map("game_settings")
+}
+
+model RentalFee {
+  date                 String // yyyyMMdd
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @default(now()) @updatedAt @map("updated_at")
+  arcadeMachineOwnerId String       @map("arcade_machine_owner_id") @db.Uuid
+  arcadeMachineId      String       @map("arcade_machine_id")
+  gameCenterOwnerId    String       @map("game_center_owner_id") @db.Uuid
+  gameCenterId         String       @map("game_center_id")
+  fee                  Decimal      @db.Decimal(78, 0)
+  collectState         CollectState @default(UNPROCESSED) @map("collect_state")
+  collectDate          DateTime?    @map("collect_date")
+  paymentState         PaymentState @default(UNPROCESSED) @map("payment_state")
+  paymentDate          DateTime?    @map("payment_date")
+
+  @@id([date, arcadeMachineId])
+  @@index([date, arcadeMachineId, arcadeMachineOwnerId])
+  @@index([date, gameCenterOwnerId, gameCenterId])
+  @@map("rental_fees")
+}
+
+model Notification {
+  /// @TypeGraphQL.omit(input: true)
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at")
+  userId            String           @map("user_id") @db.Uuid
+  notificationType  NotificationType @map("notification_type")
+  tokenId           String?          @map("token_id") // イベントがToken複数に対しての場合があるのでNull許容
+  nftType           NftType          @map("nft_type")
+  /// @TypeGraphQL.omit(input: true)
+  messageJson       Json             @map("message_json") // 1行のメッセージ
+  /// @TypeGraphQL.omit(input: true)
+  messageDetailJson Json?            @map("message_detail_json") // 詳細
+
+  /// @TypeGraphQL.omit(input: true)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, notificationType])
+  @@map("notifications")
+}
+
+model AccessLog {
+  date        String
+  // ログを結合したりしないし、リレーションしてしまうとUser消す時にログも消えてしまうしと
+  // DB的にリレーションを貼る必要性がない
+  userId      String   @map("user_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  accessCount Int      @default(1) @map("access_count")
+
+  @@id([date, userId])
+  @@map("access_logs")
+}
+
+model Craft {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt              DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  userId                 String   @map("user_id") @db.Uuid
+  craftedArcadeMachineId String   @unique @map("crafted_arcade_machine_id")
+  usedTerasBalance       Decimal  @map("used_teras_balance") @db.Decimal(78, 0)
+  usedAkvBalance         Decimal  @default(0) @map("used_akv_balance") @db.Decimal(78, 0)
+
+  // relation
+  user                 User          @relation(fields: [userId], references: [id])
+  craftedArcadeMachine ArcadeMachine @relation(fields: [craftedArcadeMachineId], references: [id])
+  arcadeParts          ArcadePart[]
+
+  @@index([userId])
+  @@map("craft")
+}
+
+model Junk {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime           @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt   DateTime           @default(now()) @updatedAt @map("updated_at")
+  userId      String             @map("user_id") @db.Uuid
+  user        User               @relation(fields: [userId], references: [id])
+  category    ArcadePartCategory
+  subCategory String             @map("sub_category")
+  amount      Int
+
+  // 20230523065158_add_open_beta_phase_1_tables_and_columns
+  // amount over zero check constraint
+
+  // userId/category/subCategoryでユニークにする
+  @@unique([userId, category, subCategory])
+  @@index([userId])
+  @@map("junks")
+}
+
+model ExtractJunkInventory {
+  category    String
+  subCategory String   @map("sub_category")
+  createdAt   DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  amount      Int
+
+  // 20230523065158_add_open_beta_phase_1_tables_and_columns
+  // amount over zero check constraint
+  @@id([category, subCategory])
+  @@map("extract_junk_inventories")
+}
+
+enum ExtractableItemType {
+  ARCADE_PART
+  JUNK_PART
+
+  @@map("extractable_item_type")
+}
+
+model ExtractInitialInventory {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime            @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at")
+  seasonId      String              @map("season_id")
+  itemType      ExtractableItemType @map("item_type")
+  category      String
+  subCategory   String              @map("sub_category")
+  initialAmount Int                 @map("initial_amount")
+  featuredItem  Boolean             @map("featured_item")
+
+  @@unique([seasonId, itemType, category, subCategory]) // Seasonごとに各Item1行まで
+  @@index([seasonId])
+  @@map("extract_initial_inventories")
+}
+
+model Season {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+  startAt              DateTime  @map("start_at")
+  endAt                DateTime? @map("end_at")
+  baseExtractItemCount Int       @map("base_extract_item_count") // 基準排出数
+
+  @@map("seasons")
+}
+
+model Extract {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt               DateTime      @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt               DateTime      @default(now()) @updatedAt @map("updated_at")
+  userId                  String        @map("user_id") @db.Uuid
+  user                    User          @relation(fields: [userId], references: [id])
+  arcadeMachineId         String        @map("arcade_machine_id")
+  arcadeMachine           ArcadeMachine @relation(fields: [arcadeMachineId], references: [id])
+  extractArcadePartsCount Int           @map("extract_arcade_parts_count")
+  extractJunkPartsCount   Int           @map("extract_junk_parts_count")
+  extractDetail           Json          @map("extract_detail")
+
+  @@index([userId])
+  @@index([arcadeMachineId])
+  @@map("extracts")
+}
+
+model Reward {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  createdAt      DateTime       @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at")
+  userId         String         @map("user_id") @db.Uuid
+  user           User           @relation(fields: [userId], references: [id])
+  rewardItemType RewardItemType @map("reward_item_type")
+  category       RewardCategory
+  subCategory    String?        @map("sub_category")
+  // Terasの量が入る場合もあるが、現実的に配布する桁数であればIntで足りる想定
+  amount         Int
+  // 受け取り期限 nullの場合は無期限
+  availableUntil DateTime?      @map("available_until")
+  // 受け取り日 not null = 受け取り済
+  acceptedAt     DateTime?      @map("accepted_at")
+
+  @@index([userId])
+  @@map("rewards")
+}
+
+// 消費系アイテム
+// 現状仕様が確定していないのでコメントアウト
+// model ConsumptionItem {
+//   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+//   createdAt   DateTime  @default(now()) @map("created_at")
+//   /// @TypeGraphQL.omit(output: true, input: true)
+//   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+//   userId      String    @map("user_id") @db.Uuid
+//   user        User      @relation(fields: [userId], references: [id])
+//   category    String
+//   subCategory String
+//   expiredAt   DateTime?
+//   used        Boolean   @default(false)
+// }
+
+// だいじなもの
+enum CollectibleItemCategory {
+  ICON
+  TITLE
+  FRAME
+
+  @@map("collectible_item_category")
+}
+
+model CollectibleItem {
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime                @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt   DateTime                @default(now()) @updatedAt @map("updated_at")
+  userId      String                  @map("user_id") @db.Uuid
+  user        User                    @relation(fields: [userId], references: [id])
+  category    CollectibleItemCategory
+  subCategory String                  @map("sub_category")
+
+  @@unique([userId, category, subCategory])
+  @@index([userId])
+  @@map("collectible_items")
+}
+
+model QuestChain {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+  userId             String    @map("user_id") @db.Uuid
+  user               User      @relation(fields: [userId], references: [id])
+  questChainMasterId String    @map("quest_chain_master_id")
+  completed          Boolean   @default(false)
+  acceptedAt         DateTime  @default(now()) @map("accepted_at")
+  expiredAt          DateTime? @map("expired_at")
+
+  quests Quest[]
+
+  @@unique([userId, questChainMasterId])
+  @@index([userId])
+  @@map("quest_chains")
+}
+
+model Quest {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime   @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
+  questChainId  String     @map("quest_chain_id") @db.Uuid
+  questChain    QuestChain @relation(fields: [questChainId], references: [id])
+  questMasterId String     @map("quest_master_id")
+  startAt       DateTime   @default(now()) @map("start_at")
+  completedAt   DateTime?  @map("completed_at")
+
+  @@unique([questChainId, questMasterId])
+  @@index([questChainId])
+  @@map("quests")
+}
+
+enum NewsCategory {
+  INFO
+  EVENT
+  PROMO
+
+  @@map("news_category")
+}
+
+model News {
+  id           Int          @id @default(autoincrement())
+  createdAt    DateTime     @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at")
+  category     NewsCategory
+  title        String
+  externalLink String?      @map("external_link")
+  display      Boolean      @default(true)
+  startAt      DateTime?    @map("start_at")
+  endAt        DateTime?    @map("end_at")
+
+  @@map("news")
+}
+
+model Banner {
+  id           Int          @id @default(autoincrement())
+  createdAt    DateTime     @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at")
+  mainImageUrl String       @map("main_image_url")
+  bgImageUrl   String       @map("bg_image_url")
+  externalLink String?      @map("external_link")
+  display      Boolean      @default(true)
+  startAt      DateTime?    @map("start_at")
+  endAt        DateTime?    @map("end_at")
+  frontEndType FrontEndType @default(WM) @map("front_end_type")
+  targetArea   String?      @map("target_area") // 国コードカンマ区切り
+  description  String? // レコードの説明、スプシのIDなどを記録するためのカラム
+
+  @@map("banners")
+}
+
+// マーケティング専用 アプリ内での使用は不可
+model CampaignParticipant {
+  userId     String @map("user_id") @db.Uuid
+  campaignId String @map("campaign_id")
+
+  @@unique([userId, campaignId])
+  @@index([userId, campaignId])
+  @@map("campaign_participants")
+}
+
+model Dismantle {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at")
+  userId           String        @map("user_id") @db.Uuid
+  user             User          @relation(fields: [userId], references: [id])
+  arcadeMachineId  String        @unique @map("arcade_machine_id")
+  arcadeMachine    ArcadeMachine @relation(fields: [arcadeMachineId], references: [id])
+  feverSparkRemain Int           @map("fever_spark_remain")
+
+  createdArcadeParts ArcadePart[]
+
+  @@index([userId])
+  @@map("dismantles")
+}
+
+enum OperatingSystem {
+  IOS
+  ANDROID
+
+  @@map("operating_system")
+}
+
+// ネイティブアプリ審査中に認証処理を変更するためのAPI用
+model AppVersion {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at")
+  os          OperatingSystem
+  version     String
+  underReview Boolean         @map("under_review")
+
+  @@unique([os, version])
+  @@index([os, version])
+  @@map("app_versions")
+}
+
+model BatchControl {
+  code      String   @id
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  value     String
+
+  @@map("batch_controls")
+}
+
+model RoviTournament {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  tournamentId    String   @unique @map("tournament_id")
+  tournamentType  String   @map("tournament_type")
+  startAt         DateTime @map("start_at")
+  endAt           DateTime @map("end_at")
+  winnerChecked   Boolean  @default(false) @map("winner_checked")
+  entryFee        Decimal  @map("entry_fee")
+  entryFeeType    String   @map("entry_fee_type")
+  entryFeeAssetId Int      @map("entry_fee_asset_id")
+  minPlayerCount  Int      @map("min_player_count")
+  playerCount     Int?     @map("player_count")
+  winnerCount     Int?     @map("winner_count")
+  prizeSummary    Decimal? @map("prize_summary")
+  prizeType       String?  @map("prize_type")
+  invalid         Boolean  @default(false)
+
+  @@map("rovi_tournaments")
+}
+
+enum PurchaseStatus {
+  UNPROCESSED
+  GRANTED
+  CANCELED
+  INVALID
+
+  @@map("purchase_status")
+}
+
+/// @TypeGraphQL.omit(output: true, input: true)
+model GoogleOneTimePurchase {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at")
+  userId         String         @map("user_id") @db.Uuid
+  status         PurchaseStatus @default(UNPROCESSED)
+  // Googleのpurchases.productsを取得する際に必要な情報
+  // see. https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.products/get
+  productId      String         @map("product_id")
+  purchaseToken  String         @unique @map("purchase_token")
+  errorDetail    String?        @map("error_detail")
+  purchaseDetail String?        @map("purchase_detail")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("google_one_time_purchases")
+}
+
+// 有料トーナメントのマスター
+model PaidTournament {
+  id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                      DateTime                         @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt                      DateTime                         @default(now()) @updatedAt @map("updated_at")
+  entryFeeTickets                Int                              @map("entry_fee_tickets") // 参加に必要なチケット数
+  title                          String
+  // 優先表示する画像がある場合は設定する
+  imageUrl                       String?                          @map("image_url")
+  // スポンサートーナメント開催時は参加費0で賞金Poolを設定することがあるため
+  // prizeTerasAmountが設定されている場合はFEで表示する賞金総額にこれを表示する
+  prizeTerasAmount               Decimal?                         @map("prize_teras_amount")
+  // 開催期間
+  startAt                        DateTime                         @map("start_at")
+  endAt                          DateTime                         @map("end_at")
+  gameId                         String?                          @map("game_id") // null:全ゲーム対象 IDあり:特定のゲームのみ対象
+  resultRecorded                 Boolean                          @default(false) @map("result_recorded")
+  targetArea                     String?                          @map("target_area") // 国コードカンマ区切り
+  prizeTerasOnly                 Boolean                          @default(false) @map("prize_teras_only") // Trueの場合はUSDC/IDRの受け取りをさせない
+  paidTournamentType             PaidTournamentType               @default(SPARK_COUNT) @map("paid_tournament_type") // トナメ種類
+  entries                        PaidTournamentEntry[]
+  activeBoosterForTournaments    ActiveBoosterForTournament[]
+  paidTournamentBoosterAvailable PaidTournamentBoosterAvailable[]
+  prizeSent                      Boolean                          @default(false) @map("prize_sent") // 賞金送付済みフラグ. 手動送金対象のトーナメントは登録時点でここをtrueにしておき処理対象外にしておくこと
+
+  @@map("paid_tournaments")
+}
+
+enum PaidTournamentType {
+  // SPARK_COUNT Spark数
+  SPARK_COUNT
+  // SPARK_TERAS ゲームプレイでプレイヤーに排出されたTerasの総量
+  SPARK_TERAS
+}
+
+enum PrizeSendStatus {
+  UNPROCESSED
+  PENDING // 投げた状態
+  CONFIRMED
+  ERROR
+
+  @@map("prize_send_status")
+}
+
+model PaidTournamentEntry {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  userId        String   @map("user_id") @db.Uuid
+  usedTickets   Int      @map("used_tickets")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  countryFromIp String?  @map("country_from_ip") // IPアドレスから取得した参加登録時の国コード(ISO 3166-1 alpha-2)：参考情報用
+
+  paidTournamentId String           @map("paid_tournament_id") @db.Uuid
+  prizeClaimed     Boolean          @default(false) @map("prize_claimed")
+  // 賞金を換金する場合の送付先情報
+  walletAddress    String?          @map("wallet_address")
+  phoneNumber      String?          @map("phone_number")
+  prizeSendStatus  PrizeSendStatus? @map("prize_send_status")
+
+  paidTournament PaidTournament @relation(fields: [paidTournamentId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+
+  @@unique([paidTournamentId, userId])
+  @@map("paid_tournament_entries")
+}
+
+enum TicketTransactionType {
+  PURCHASE
+  ENTER_TOURNAMENT
+  OPEN_QUEST
+  TOURNAMENT_BOOSTER
+
+  @@map("ticket_transaction_type")
+}
+
+// チケットの加減算履歴
+model TicketTransaction {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @default(now()) @updatedAt @map("updated_at")
+  userId            String                @map("user_id") @db.Uuid
+  changeAmount      Int                   @map("change_amount") // positive:加算 negative:消費
+  balance           Int // トランザクション発生後の保有状況
+  transactionType   TicketTransactionType @map("transaction_type")
+  transactionDetail String?               @map("transaction_detail") // トランザクションID・クエストIDなど
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("ticket_transactions")
+}
+
+model PaidTournamentResult {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  userId           String   @map("user_id") @db.Uuid
+  tournamentId     String   @map("tournament_id") @db.Uuid
+  rank             Int
+  score            Int
+  prizeTerasAmount Decimal  @map("prize_teras_amount")
+  prizeUsdcAmount  Decimal? @map("prize_usdc_amount") // USDCステーブルコイン
+  prizeIdrAmount   Decimal? @map("prize_idr_amount") // インドネシアルピー
+
+  @@unique([userId, tournamentId])
+  @@unique([tournamentId, rank])
+  @@map("paid_tournament_results")
+}
+
+// SPNPayに投げる時に投げた内容を保存する
+model SpnPaySend {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @default(now()) @updatedAt @map("updated_at")
+  paidTournamentEntryId String         @map("paid_tournament_entry_id") @db.Uuid
+  body                  String // 投げた時にpayload
+  SpnPayResult          SpnPayResult[]
+
+  @@map("spn_pay_send")
+}
+
+// SPNPayに投げた直具並びにコールバックを受け取った時に内容を保存するテーブル
+model SpnPayResult {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  spnPaySendId String   @map("spn_pay_send_id") @db.Uuid
+  response     String?  @map("response") // 投げた時/コールバックを受けた時に取得したレスポンス
+
+  send SpnPaySend @relation(fields: [spnPaySendId], references: [id])
+
+  @@map("spn_pay_results")
+}
+
+model MinimumAppVersion {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at")
+  os             OperatingSystem
+  minimumVersion String          @map("minimum_version")
+
+  @@unique([os])
+  @@map("minimum_app_versions")
+}
+
+model InterstitialBanner {
+  id                   Int       @id @default(autoincrement())
+  createdAt            DateTime  @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+  imageUrl             String    @map("image_url")
+  externalLink         String?   @map("external_link")
+  display              Boolean   @default(true)
+  startAt              DateTime? @map("start_at")
+  endAt                DateTime? @map("end_at")
+  targetArea           String?   @map("target_area") // 国コードカンマ区切り
+  description          String? // レコードの説明、スプシのIDなどを記録するためのカラム
+  remainingTimeVisible Boolean   @default(false) @map("remaining_time_visible")
+
+  @@map("interstitial_banners")
+}
+
+enum BoosterCategory {
+  SPARK_TERAS_UP // subCategoryはXnとし、処理時にn倍する実装にする。それ以外の実装をする場合はロジック修正のこと
+  GAME_SWAP
+  EASY_MODE // SubCategoryはALLのみ許容
+
+  @@map("booster_category")
+}
+
+// ブーストアイテムのマスター
+model BoosterMaster {
+  id                              String                           @id
+  createdAt                       DateTime                         @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt                       DateTime                         @default(now()) @updatedAt @map("updated_at")
+  category                        BoosterCategory
+  subCategory                     String                           @map("sub_category")
+  variant                         String
+  feeTickets                      Int                              @map("fee_tickets")
+  effectiveMinutes                Int                              @map("effective_minutes") // 負の値を設定した場合トナメ終了時間までとする
+  requireTournament               Boolean                          @map("require_tournament") // トナメと紐付け必須かどうか
+  paidTournamentBoosterAvailables PaidTournamentBoosterAvailable[]
+
+  @@unique([category, subCategory, variant])
+  @@map("booster_masters")
+}
+
+// トーナメントで購入可能なアイテムのリレーション
+model PaidTournamentBoosterAvailable {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  boosterMasterId  String   @map("booster_master_id")
+  paidTournamentId String   @map("paid_tournament_id") @db.Uuid
+
+  paidTournament PaidTournament @relation(fields: [paidTournamentId], references: [id])
+  boosterMaster  BoosterMaster  @relation(fields: [boosterMasterId], references: [id])
+
+  @@unique([paidTournamentId, boosterMasterId])
+  @@map("paid_tournament_booster_availables")
+}
+
+// 有効となっているブースターアイテム
+// 以下の理由により全体にかかるものとトナメにかかるものでモデルを分けています
+// ・Prismaが部分インデックスを直接サポートしていないため、プログラム的に結局ハンドリングが必要である
+// ・PaidTournamentIdにnullを許容するとユニーク制約が効果を発揮しない場面が出てくる
+// ・PaidTournamentと直接紐づいてくれていた方がプログラム的に処理が簡潔にかける
+// 有効となっているブースターアイテム(全体にかかるもの
+model ActiveBooster {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at")
+  endAt       DateTime        @map("end_at")
+  category    BoosterCategory
+  subCategory String          @map("sub_category")
+  userId      String          @map("user_id") @db.Uuid
+  user        User            @relation(fields: [userId], references: [id])
+
+  // endAtも含めた形でEXCLUDE制約を使いたいところだが、RDSのパラメタグループ変更と再起動が必要なためアプリケーション側で担保する
+  @@unique([userId, category, subCategory])
+  @@map("active_boosters")
+}
+
+// 有効となっているブースターアイテム（トナメにかかるもの
+model ActiveBoosterForTournament {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt        DateTime        @default(now()) @updatedAt @map("updated_at")
+  endAt            DateTime        @map("end_at")
+  category         BoosterCategory
+  subCategory      String          @map("sub_category")
+  userId           String          @map("user_id") @db.Uuid
+  paidTournamentId String          @map("paid_tournament_id") @db.Uuid // トナメに紐づくアイテムはトナメIDを設定する
+
+  paidTournament PaidTournament @relation(fields: [paidTournamentId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+
+  // endAtも含めた形でEXCLUDE制約を使いたいところだが、RDSのパラメタグループ変更と再起動が必要なためアプリケーション側で担保する
+  @@unique([userId, paidTournamentId, category, subCategory])
+  @@map("active_booster_for_tournaments")
+}
+
+// トーナメントの賞金受け取り申請をさせないユーザーリスト
+model PaidTournamentPrizeClaimIgnoreUser {
+  id     String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+  @@map("paid_tournament_prize_claim_ignore_users")
+}
+
+enum QuestChainCategory {
+  ONWARD
+  EVENT
+  VIP
+
+  @@map("quest_chain_category")
+}
+
+model QuestChainMaster {
+  id                       String                   @id
+  title                    String
+  chainCategory            QuestChainCategory       @map("chain_category")
+  startAt                  DateTime?                @map("start_at")
+  endAt                    DateTime?                @map("end_at")
+  // 解放に必要な料金一覧
+  terasRequiredForRelease  Decimal?                 @map("teras_required_for_release")
+  akvRequiredForRelease    Decimal?                 @map("akv_required_for_release")
+  ticketRequiredForRelease Int?                     @map("ticket_required_for_release")
+  // 前提クエストチェーン
+  beforeQuestChainId       String?                  @map("before_quest_chain_id")
+  // スポンサークエストなど特殊なタイトルを表示するか
+  specifiedTitleImage      Boolean                  @map("specified_title_image")
+  rewards                  QuestChainRewardMaster[]
+  quests                   QuestMaster[]
+
+  @@map("quest_chain_masters")
+}
+
+enum QuestRewardType {
+  TERAS
+  ARCADE_PART
+  ARCADE_PART_RANDOM
+  JUNK_PART
+  JUNK_PART_RANDOM
+  COLLECTIBLE_ITEM
+
+  @@map("quest_reward_type")
+}
+
+enum QuestRewardCategory {
+  // AP/Junk
+  ROM
+  ACCUMULATOR
+  UPPER_CABINET
+  LOWER_CABINET
+  RANDOM
+  // CollectibleItem
+  TITLE
+  ICON
+  FRAME
+  // TERAS
+  TERAS
+
+  @@map("quest_reward_category")
+}
+
+model QuestChainRewardMaster {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questChainMasterId String              @map("quest_chain_master_id")
+  itemType           QuestRewardType     @map("item_type")
+  category           QuestRewardCategory
+  subCategory        String              @map("sub_category")
+  amount             Int
+
+  master QuestChainMaster @relation(fields: [questChainMasterId], references: [id])
+
+  @@map("quest_chain_reward_masters")
+}
+
+enum QuestProgressType {
+  PLAY_COUNT // プレイ数
+  SPARK_COUNT // スパーク数
+  CONSECUTIVE_SPARK_COUNT // 連続したスパーク数
+  UNIQUE_GAME_PLAY_COUNT // プレイしたゲームの数
+  UNIQUE_GAME_SPARK_COUNT // スパークしたゲームの数
+  CONSECUTIVE_SPARK_DAYS // 連続したスパークした日数
+  CONNECT_WALLET // ウォレットコネクト
+  CONSECUTIVE_PLAY_DAYS_IN_DIFFERENT_GAME // n種類以上のゲームをプレイした連続した日数
+  // SPECIFIC_GAME_PLAY_COUNT // 特定のゲームをプレイした数 DB的にはPLAY_COUNT+パラメータで表現できる
+  // SPECIFIC_GAME_SPARK_COUNT // 特定のゲームをスパークした回数 DB的にはSPARK_COUNT+パラメータで表現できる
+  UNIQUE_PLAY_DAYS // 基準日ベースでプレイした日数≒ログイン日数
+
+  @@map("quest_progress_type")
+}
+
+model QuestMaster {
+  id                 String               @id
+  questChainMasterId String               @map("quest_chain_master_id")
+  // 表示上の並び順
+  seq                Int
+  title              String
+  // 進捗関係
+  progressGoal       Int                  @map("progress_goal")
+  progressType       QuestProgressType    @map("progress_type")
+  progressParams     String?              @map("progress_params") // 進捗関数に引き渡すパラメータ GameId/ゲーム数
+  // リワード関係 なしがあるのでNullable
+  itemType           QuestRewardType?     @map("item_type")
+  category           QuestRewardCategory?
+  subCategory        String?              @map("sub_category")
+  amount             Int?
+  // 前提条件
+  beforeQuestIds     String?              @map("before_quest_ids") // QuestMaster.idをカンマ区切りで入れる
+
+  chainMaster QuestChainMaster @relation(fields: [questChainMasterId], references: [id])
+
+  // Constraint rewardType is not null then subCategory and amount required
+  @@unique([questChainMasterId, seq])
+  @@map("quest_masters")
+}
+
+enum BannerImageType {
+  BANNER
+  INTERSTITIAL
+  PAID_TOURNAMENT
+}
+
+// バナー・全画面バナー用の画像ファイル管理用
+// Banner・InterstitialBannerテーブルとのリレーションはなく、あくまでS3のファイルの管理用
+model BannerImage {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(input: true)
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at")
+  fileName        String          @map("file_name")
+  description     String?
+  bannerImageType BannerImageType @map("banner_image_type")
+  s3Path          String          @map("s3_path")
+
+  @@unique([s3Path])
+  @@unique([bannerImageType, fileName])
+  @@map("banner_images")
+}

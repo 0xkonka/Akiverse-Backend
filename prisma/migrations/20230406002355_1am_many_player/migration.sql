@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS one_active_play_session_per_arcade_machine;

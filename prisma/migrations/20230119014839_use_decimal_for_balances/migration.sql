@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "akir_balance" SET DEFAULT 0,
+ALTER COLUMN "akir_balance" SET DATA TYPE DECIMAL(78,0),
+ALTER COLUMN "akv_balance" SET DEFAULT 0,
+ALTER COLUMN "akv_balance" SET DATA TYPE DECIMAL(78,0);

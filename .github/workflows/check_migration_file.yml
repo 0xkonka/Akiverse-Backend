@@ -1,0 +1,88 @@
+# developブランチにマージする際にPrismaのマイグレーションフォルダ名の日付を確認して古い場合、エラーにする
+
+name: Check migration file
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "prisma/migrations/*/migration.sql"
+
+jobs:
+  check-migration-file:
+    runs-on: ubuntu-latest
+    steps:
+      # マージ先のプロジェクト取得
+      - name: checkout base
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      # マージするプロジェクト取得
+      - name: checkout head
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          path: head
+
+      - name: check migration file
+        run: |
+          # マージ先のプロジェクトのマイグレーションフォルダ取得（フォルダ名の先頭が日時のファイル取得）
+          base_name_list=`ls ./base/prisma/migrations | egrep '^[0-9]{14}'`
+          echo -e "[base_name_list]\n${base_name_list}"
+
+          # マージするプロジェクトのマイグレーションフォルダ取得（フォルダ名の先頭が日時のファイル取得）
+          head_name_list=`ls ./head/prisma/migrations | egrep '^[0-9]{14}'`
+          echo -e "[head_name_list]\n${head_name_list}"
+
+          # リストに差分がない場合、すでに当たっているマイグレーションの修正なのでエラー
+          if [ "$base_name_list" == "$head_name_list" ]
+          then
+            echo "Checked error : modification of existing migrations."
+            exit 1
+          fi
+
+          # マージ済みで一番新しいフォルダ名取得
+          base_name=`ls ./base/prisma/migrations | egrep '^[0-9]{14}' | tail -n 1`
+
+          echo "Start checking migration file."
+
+          # 配列内に含まれているかチェックする
+          check_array() {
+            local i
+            for i in ${base_name_list[@]}; do
+                if [[ ${i} = ${1} ]]; then
+                    return 0
+                fi
+            done
+            return 1
+          }
+
+          for eachValue in $head_name_list; do
+            if check_array $eachValue; then
+              # 既にマージ済みのフォルダ
+              echo "${eachValue} exists."
+            else
+              # 未マージのフォルダの場合、マージ先の最新フォルダと比較する
+              echo "${eachValue} does not exist."
+              head_name="${eachValue}"
+
+              # フォルダから日時部分だけ取り出して大小比較
+              if [ "${base_name:0:14}" \< "${head_name:0:14}" ]
+              then
+                # 一番古い未マージのフォルダがマージ先の最新フォルダより新しい場合、問題なし
+                echo "no error"
+                exit 0
+              else
+                # 一番古い未マージのフォルダがマージ先の最新フォルダより古い場合、エラーにしてフォルダ名修正を依頼
+                echo "Checked error : ${head_name} is older than ${base_name}. Please review the folder dateTime after the ${head_name}."
+                exit 1
+              fi
+            fi
+          done
+
+          # チェックで問題なかった場合
+          echo "no error"
+          exit 0

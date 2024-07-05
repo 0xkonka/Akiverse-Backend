@@ -1,0 +1,130 @@
+{
+  "family": "akiverse-production-executor",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-executor",
+      "image": "",
+      "essential": true,
+      "command": ["node", "executor.js"],
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "production"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_ADDRESS",
+          "value": "0x60037eD232eD437C3fa8e34e897fcE330798c949"
+        },
+        {
+          "name": "GAME_CENTERS_CONTRACT_ADDRESS",
+          "value": "0x2Dd6E7c773ec931719b1929Ab8B4Ed1E95776036"
+        },
+        {
+          "name": "ARCADE_MACHINES_CONTRACT_ADDRESS",
+          "value": "0x315c5809E18BFc0fd8272DA265D897f0B81B69A8"
+        },
+        {
+          "name": "ARCADE_PARTS_CONTRACT_ADDRESS",
+          "value": "0xA0c5bedfe27855537DDEB46AbdaE06ED3AC9187D"
+        },
+        {
+          "name": "JSON_RPC_PROVIDER",
+          "value": "https://polygon-rpc.com"
+        },
+        {
+          "name": "GAS_PRICE_ADJUSTMENT_RATIO",
+          "value": "1.03"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "ALCHEMY_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/ALCHEMY_API_KEY"
+        },
+        {
+          "name": "AKIR_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/AKIR_SIGNER_KEY"
+        },
+        {
+          "name": "AM_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/AM_SIGNER_KEY"
+        },
+        {
+          "name": "AP_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/AP_SIGNER_KEY"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/DATABASE_URL"
+        },
+        {
+          "name": "MORALIS_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/MORALIS_API_KEY"
+        },
+        {
+          "name": "MAGIC_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/MAGIC_SECRET_KEY"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/AKIVERSE_LOCKER_SIGNER_KEY"
+        },
+        {
+          "name": "USDC_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/USDC_SIGNER_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/production/executor",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/executor/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/executor/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "akiverse-production-task-execution",
+  "taskRoleArn": "akiverse-production-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

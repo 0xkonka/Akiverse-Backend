@@ -1,0 +1,70 @@
+{
+  "family": "akiverse-staging-fee-collector",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-fee-collector",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "fee_collector.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "staging"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/staging/DATABASE_URL"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/staging/fee-collector",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-staging-firelens-config-6a7ce5b1b1566e49/staging/fee-collector/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-staging-firelens-config-6a7ce5b1b1566e49/staging/fee-collector/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-staging-task-execution",
+  "taskRoleArn": "akiverse-staging-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

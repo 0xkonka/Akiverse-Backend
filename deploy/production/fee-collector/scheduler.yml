@@ -1,0 +1,19 @@
+region: ap-south-1
+cluster: akiverse-production
+role: akiverse-production-task-execution
+rules:
+  - name: akiverse-production-fee-collector
+    scheduleExpression: cron(1 15 * * ? *) # JST 0:01 am every day  https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html
+    taskDefinition: akiverse-production-fee-collector
+    group: scheduled:akiverse-production-fee-collector
+    platform_version: 1.4.0
+    launch_type: FARGATE
+    network_configuration:
+      aws_vpc_configuration:
+        subnets:
+          - subnet-0cbd071f9ea7b64d5 # private subnet
+          - subnet-0f065128180926e01 # private subnet
+          - subnet-0baef273ec6b3d378 # private subnet
+        security_groups:
+          - sg-081e57bb555c7a974 # common
+        assign_public_ip: ENABLED

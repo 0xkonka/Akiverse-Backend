@@ -1,0 +1,56 @@
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://akiverse:akiverse@localhost:5432/akiverse?schema=public"
+
+# https://www.notion.so/0x329b1D3fd7547eb594c754C0d8D74C6dcEc22d18-07f0313cf6c8474688da8f2fa6b83214
+AKIR_SIGNER_KEY="secret-key"
+
+# 1password -> Product -> Moralisのアカウントにログインして、API Key参照
+MORALIS_API_KEY="xxxxxxxx"
+
+# MagicLink server secret key
+MAGIC_SECRET_KEY="xxxxxxx"
+
+# MagicLink public api key
+# scripts/login.tsを利用してダミーログインする場合に必要
+MAGIC_API_KEY="xxxxx"
+
+# GAME_CENTERS_CONTRACT_ADDRESS="0x2Dd6E7c773ec931719b1929Ab8B4Ed1E95776036"  # mainnet
+GAME_CENTERS_CONTRACT_ADDRESS="0xd41ed03a13b7012802f98d4fdb8eea6828c25d04"  # testnet
+ARCADE_MACHINES_CONTRACT_ADDRESS="0xe145458948a144F0cE2d7ABf21A7edF583187083"  # testnet
+ARCADE_PARTS_CONTRACT_ADDRESS="0x21b43679DC8cc88d97298214b717bC8b0A96a458"  # testnet
+
+# JSON_RPC_PROVIDER="https://polygon-rpc.com"  # mainnet
+# JSON_RPC_PROVIDER="https://rpc-mumbai.matic.today"  # testnetだけどblockは出てこなかった
+JSON_RPC_PROVIDER="https://rpc-mumbai.maticvigil.com"  # testnet。良さそう
+
+AKIVERSE_LOCKER_ADDRESS="0x9FCA918d756d973471aF45acAA9236Ff6a658162"  # testnet
+
+ACCESS_TOKEN_SECRET=local
+
+# Ethereum 用のAlchemyAPIキーを設定
+ETH_ALCHEMY_API_KEY=xxxxxx
+
+REDIS_URL=redis://localhost:6379
+
+# Rovi連携のWebhookURL パスは固定のためスキームとドメインのみ指定可能
+ROVI_WEBHOOK_DOMAIN=https://hogehogehoge
+
+# Roviのゲームプレイ時に発行するJWTのシークレット
+ROVI_PLAY_TOKEN_SECRET=local
+
+# Firebase admin SDKのCert Firebaseのコンソールから取得 or 1Password参照
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+
+# Google Play
+GOOGLE_PLAY_CLIENT_EMAIL=xxxxx@xxxxx
+GOOGLE_PLAY_CLIENT_KEY=xxxxxx
+
+IMAGE_ASSET_S3_BUCKET_NAME=local_ut
+IMAGE_ASSET_URL_BASE=http://localhost:9001/

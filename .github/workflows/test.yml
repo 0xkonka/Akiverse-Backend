@@ -1,0 +1,69 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub PostgreSQL image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/akiverse_test
+      REDIS_URL: redis://localhost:6379
+      NODE_OPTIONS: "--max_old_space_size=5120"
+      FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099"
+      IMAGE_ASSET_S3_BUCKET_NAME: local_ut
+      IMAGE_ASSET_URL_BASE: local_ut
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 20.14.0
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@victgame"
+      - uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - run: yarn global add firebase-tools
+      - run: yarn install --immutable
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - run: yarn db:migrate:deploy
+      - run: yarn generate
+      - run: yarn test
+        env:
+          ACCESS_TOKEN_SECRET: github_action
+          ROVI_PLAY_TOKEN_SECRET: github_action

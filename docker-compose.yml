@@ -1,0 +1,66 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+    depends_on:
+      - database
+    image: akiverse-backend
+    command: yarn watcher
+    container_name: akiverse-backend
+    environment:
+      DATABASE_URL: postgres://akiverse:akiverse@database:5432?sslmode=disable
+    volumes:
+       - .:/app
+  database:
+    container_name: postgres
+    image: postgres:13
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - /var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: akiverse
+      POSTGRES_PASSWORD: akiverse
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U akiverse']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    container_name: redis
+    image: redis:7.2.3
+    restart: always
+    ports:
+      - 6379:6379
+  s3:
+    container_name: s3
+    image: minio/minio:latest
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: minioroot
+      MINIO_ROOT_PASSWORD: miniorootpass
+    ports:
+      - "9000:9000" # APIアクセス用
+      - "9001:9001" # 管理コンソール(GUI)用
+    volumes:
+      - ./minio/data:/data
+    restart: always
+  s3init:
+    image: minio/mc:latest
+    depends_on:
+      - s3
+    environment:
+      - MINIO_API_CONTAINER_PORT=9000
+      - MINIO_ROOT_USER=minioroot
+      - MINIO_ROOT_PASSWORD=miniorootpass
+      - MINIO_SERVER_ADDRESS=s3
+      - MINIO_BUCKET_NAME=image-bucket
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://s3:$$MINIO_API_CONTAINER_PORT $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc mb myminio/$$MINIO_BUCKET_NAME;
+      /usr/bin/mc anonymous set none myminio/$$MINIO_BUCKET_NAME;
+      exit 0;
+      "

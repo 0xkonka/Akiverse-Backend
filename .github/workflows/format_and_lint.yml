@@ -1,0 +1,91 @@
+# developブランチにマージする際にファイルがフォーマットされているかとlintが通るか確認する
+
+name: Check format and lint
+
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - "**"
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      # マージするプロジェクト取得
+      - name: checkout head
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          path: head
+
+      # フォーマット確認用のプロジェクト取得
+      - name: checkout base
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          path: base
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 20.7.0
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@victgame"
+
+      - uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+      - run: cd head && yarn install --immutable
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      # フォーマット実行
+      - name: Format
+        run: |
+          cd head
+          yarn format
+
+      # 変更対象のファイル取得
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          path: head
+
+      # フォーマットしたファイルと比較する
+      - name: Check Diff files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+            diff "./base/$file" "./head/$file"
+          done
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 20.7.0
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@victgame"
+
+      - uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+      - run: yarn install --immutable
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      # Lintチェック
+      - name: Lint
+        run: yarn lint

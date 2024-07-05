@@ -1,0 +1,230 @@
+<!--
+ ベースはMagicLinkのチュートリアル
+ https://magic.link/docs/auth/login-methods/email/build-a-demo/browser
+ -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Magic Hello World 🌎</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- 1. Install Magic SDK -->
+    <script src="https://auth.magic.link/sdk"></script>
+    <script>
+      /* 2.Initialize Magic Instance */
+      const magic = new Magic('{{MAGIC_API_KEY}}');
+
+
+      const loggedInHtml = `
+        <h2>DID Token(include prefix)</h2>
+        <h3>
+          Last Update At:<input type="text" id="updatedAt" readonly><br>
+          <textarea id="didtoken" ></textarea>
+        </h3>
+        <button onclick="handleLogout()">Magic Logout</button>
+        <button onclick="loginApiRequest()">API Login</button>
+        <h3>
+          <input type="text" id="name" placeholder="name"><br>
+          <button onclick="sendCreateUser()">CreateUser</button>
+        </h3>
+        <h3>
+          <input type="text" id="game_center_id" placeholder="GameCenterID"><br>
+          <button onclick="sendApiRequest()">Request</button>
+          <div id="responseDiv"></div>
+        </h3>
+      `;
+      /* 3.Implement Render Function */
+      const render = async () => {
+        let html = "";
+
+        /*
+          For this tutorial, our callback route is simply "/callback"
+        */
+        if (window.location.pathname === "/callback") {
+          try {
+            /* Complete the "authentication callback" */
+            await magic.auth.loginWithCredential();
+
+            html = loggedInHtml;
+            startDidTokenUpdater();
+            // console.log(userMetadata);
+          } catch {
+            /* In the event of an error, we'll go back to the login page */
+            window.location.href = window.location.origin;
+          }
+        } else {
+          const isLoggedIn = await magic.user.isLoggedIn();
+
+          /* Show login form if user is not logged in */
+          html = `
+            <h1>Please sign up or login</h1>
+            <form onsubmit="handleLogin(event)">
+              <input type="email" name="email" required="required" placeholder="Enter your email" />
+              <button type="submit">Send</button>
+            </form>
+          `;
+
+          if (isLoggedIn) {
+            html = loggedInHtml;
+            startDidTokenUpdater();
+          }
+        }
+
+        document.getElementById("app").innerHTML = html;
+      };
+
+      /* 4. Implement Login Handler */
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        const email = new FormData(e.target).get("email");
+        const redirectURI = `${window.location.origin}/callback`; // 👈 This will be our callback URI
+        if (email) {
+          /* One-liner login 🤯 */
+          await magic.auth.loginWithMagicLink({ email, redirectURI }); // 👈 Notice the additional parameter!
+          render();
+        }
+      };
+
+      /* 5. Implement Logout Handler */
+      const handleLogout = async () => {
+        await magic.user.logout();
+        render();
+      };
+
+      // 裏でdidTokenを更新する
+      let currentDidToken = "";
+      const INTERVAL = 1 * 60 * 1000; // 1 min => ms 本来はデフォルトで15分のDID Tokenが発行されるので、10分周期くらいでOK
+      function startDidTokenUpdater() {
+        console.log("start DID Token updater");
+        (async function loop() {
+          console.log("update DID Token start");
+          setTimeout(loop, INTERVAL);
+          currentDidToken = await magic.user.getIdToken();
+          const target = document.getElementById("didtoken");
+          target.value = currentDidToken;
+          const updatedAt = document.getElementById("updatedAt");
+          updatedAt.value = new Date();
+          console.log("update DID Token end");
+        })();
+      }
+
+
+      const queryString = `
+      query ListPlacementArcadeMachines($id: String) {
+        listPlacementArcadeMachines(Id: $id) {
+          id
+          name
+          area
+          arcadeMachines {
+            id
+            game
+          }
+        }
+      }
+      `
+      const sendApiRequest = async () => {
+        const id = document.getElementById("game_center_id").value;
+        const headers = new Headers();
+        headers.set("Authorization", "Bearer 02" + currentDidToken);
+        headers.set("Content-Type", "application/json");
+
+        const data = {
+          query:queryString,
+          variables: {
+            id: id,
+          }
+        }
+        console.log("Request start" + new Date());
+        try {
+          const ret = await fetch("http://localhost:4000/graphql", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers
+          })
+          renderResponse(await ret.json());
+        } catch (e) {
+          console.log(e);
+        }
+        console.log("Request end" + new Date());
+      }
+
+      const loginApiRequest = async () => {
+        const queryString = `
+        query Login($didToken: String) {
+          login(didToken: $didToken) {
+            login
+            user {
+              id
+            }
+          }
+        }
+        `;
+        const headers = new Headers();
+        headers.set("Content-Type", "application/json");
+        try {
+          const ret = await fetch("http://localhost:4000/graphql",{
+            method: "POST",
+            body: JSON.stringify({
+              query: queryString,
+              variables: {
+                didToken: currentDidToken
+              }
+            }),
+            headers
+          });
+          renderResponse(await ret.json());
+
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      const sendCreateUser = async () => {
+        const nameString = document.getElementById("name").value;
+        const mutationString =
+          `mutation CreateUser($input: CreateUserInput\!) {
+  createUser(input: $input) {
+    id
+  }
+}`;
+
+        const headers = new Headers();
+        headers.set("Content-Type", "application/json");
+
+        try {
+          const body = JSON.stringify({
+            query: mutationString,
+            variables: {
+              input: {
+                didToken: currentDidToken,
+                name: nameString
+              }
+            }
+          });
+          const ret = await fetch("http://localhost:4000/graphql",{
+            method: "POST",
+            body: body,
+            headers,
+          })
+          renderResponse(await ret.json())
+        } catch (e) {
+          console.log(e)
+        }
+      }
+
+      const renderResponse = (ret) => {
+        console.log(ret);
+        const div = document.getElementById("responseDiv");
+        const retDiv = document.createElement("div");
+        retDiv.innerText = JSON.stringify(ret);
+        div.appendChild(retDiv);
+        ;
+      }
+
+    </script>
+  </head>
+  <body onload="render()">
+    <div id="app">Loading...</div>
+  </body>
+</html>

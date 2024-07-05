@@ -1,0 +1,74 @@
+{
+  "family": "akiverse-production-pfp-icon-checker",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-pfp-icon-checker",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "pfp_icon_checker.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "production"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/DATABASE_URL"
+        },
+        {
+          "name": "ETH_ALCHEMY_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/ETH_ALCHEMY_API_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/production/pfp-icon-checker",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/pfp-icon-checker/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/pfp-icon-checker/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "akiverse-production-task-execution",
+  "taskRoleArn": "akiverse-production-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

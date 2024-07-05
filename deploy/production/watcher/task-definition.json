@@ -1,0 +1,110 @@
+{
+  "family": "akiverse-production-watcher",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-watcher",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "watcher.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "production"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "JSON_RPC_PROVIDER",
+          "value": "https://polygon-rpc.com"
+        },
+        {
+          "name": "GAME_CENTERS_CONTRACT_ADDRESS",
+          "value": "0x2Dd6E7c773ec931719b1929Ab8B4Ed1E95776036"
+        },
+        {
+          "name": "ARCADE_MACHINES_CONTRACT_ADDRESS",
+          "value": "0x315c5809E18BFc0fd8272DA265D897f0B81B69A8"
+        },
+        {
+          "name": "ARCADE_PARTS_CONTRACT_ADDRESS",
+          "value": "0xA0c5bedfe27855537DDEB46AbdaE06ED3AC9187D"
+        },
+        {
+          "name": "AKV_CONTRACT_ADDRESS",
+          "value": "0x659e79849ED57fA5b2a336Cdd03A4D9586A0e36A"
+        },
+        {
+          "name": "USDC_WALLET_ADDRESS",
+          "value": "0x63602d9C0c5981037e19e3eEF6BA259e00F80623"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "ALCHEMY_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/ALCHEMY_API_KEY"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/DATABASE_URL"
+        },
+        {
+          "name": "MORALIS_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/MORALIS_API_KEY"
+        },
+        {
+          "name": "MAGIC_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/MAGIC_SECRET_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/production/watcher",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/watcher/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-production-firelens-config-708de480a7619757/production/watcher/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "akiverse-production-task-execution",
+  "taskRoleArn": "akiverse-production-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

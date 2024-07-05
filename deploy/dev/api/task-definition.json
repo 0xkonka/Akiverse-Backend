@@ -1,0 +1,169 @@
+{
+  "family": "akiverse-dev-api",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-api",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "portMappings": [
+        {
+          "containerPort": 4000,
+          "hostPort": 4000,
+          "protocol": "tcp"
+        }
+      ],
+      "command": ["node", "server.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "dev"
+        },
+        {
+          "name": "ALLOW_LOCALHOST_ACCESS",
+          "value": "true"
+        },
+        {
+          "name": "GAME_CENTERS_CONTRACT_ADDRESS",
+          "value": "0xd41ed03a13b7012802f98d4fdb8eea6828c25d04"
+        },
+        {
+          "name": "ARCADE_MACHINES_CONTRACT_ADDRESS",
+          "value": "0xe145458948a144F0cE2d7ABf21A7edF583187083"
+        },
+        {
+          "name": "ARCADE_PARTS_CONTRACT_ADDRESS",
+          "value": "0x21b43679DC8cc88d97298214b717bC8b0A96a458"
+        },
+        {
+          "name": "AKIVERSE_MANAGER_USER_ID",
+          "value": "8c76b09c-1e35-4c44-a991-1f359f49367e"
+        },
+        {
+          "name": "INCLUDE_ERROR_DETAIL",
+          "value": "true"
+        },
+        {
+          "name": "DEBUG_CORS_HOST",
+          "value": "https://magic.int.mint-rabi.net"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://w.redis.akiverse.io.dev.internal:6379"
+        },
+        {
+          "name": "ROVI_WEBHOOK_DOMAIN",
+          "value": "https://be.khelo-91.com"
+        },
+        {
+          "name": "PAID_TOURNAMENT_FORM_URL_ID",
+          "value": "https://whitepaper.akiverse.io"
+        },
+        {
+          "name": "IMAGE_ASSET_URL_BASE",
+          "value": "https://assets.dev.akiverse.io"
+        },
+        {
+          "name": "IMAGE_ASSET_S3_BUCKET_NAME",
+          "value": "metadata-dev-8736cfb0ef24571e"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "AKIR_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/AKIR_SIGNER_KEY"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/DATABASE_URL"
+        },
+        {
+          "name": "MORALIS_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/MORALIS_API_KEY"
+        },
+        {
+          "name": "MAGIC_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/MAGIC_SECRET_KEY"
+        },
+        {
+          "name": "ACCESS_TOKEN_SECRET",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/ACCESS_TOKEN_SECRET"
+        },
+        {
+          "name": "ETH_ALCHEMY_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/ETH_ALCHEMY_API_KEY"
+        },
+        {
+          "name": "ROVI_PLAY_TOKEN_SECRET",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/ROVI_PLAY_TOKEN_SECRET"
+        },
+        {
+          "name": "FIREBASE_PROJECT_ID",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/FIREBASE_PROJECT_ID"
+        },
+        {
+          "name": "FIREBASE_CLIENT_EMAIL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/FIREBASE_CLIENT_EMAIL"
+        },
+        {
+          "name": "FIREBASE_PRIVATE_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/FIREBASE_PRIVATE_KEY"
+        },
+        {
+          "name": "GOOGLE_PLAY_CLIENT_EMAIL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/GOOGLE_PLAY_CLIENT_EMAIL"
+        },
+        {
+          "name": "GOOGLE_PLAY_CLIENT_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/GOOGLE_PLAY_CLIENT_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/dev/api",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/api/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/api/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "akiverse-dev-task-execution",
+  "taskRoleArn": "akiverse-dev-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

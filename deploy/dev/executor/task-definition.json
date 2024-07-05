@@ -1,0 +1,126 @@
+{
+  "family": "akiverse-dev-executor",
+  "containerDefinitions": [
+    {
+      "name": "akiverse-executor",
+      "image": "",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "secretOptions": [],
+        "options": null
+      },
+      "command": ["node", "executor.js"],
+      "environment": [
+        {
+          "name": "ENV",
+          "value": "dev"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_ADDRESS",
+          "value": "0x9FCA918d756d973471aF45acAA9236Ff6a658162"
+        },
+        {
+          "name": "GAME_CENTERS_CONTRACT_ADDRESS",
+          "value": "0xd41ed03a13b7012802f98d4fdb8eea6828c25d04"
+        },
+        {
+          "name": "ARCADE_MACHINES_CONTRACT_ADDRESS",
+          "value": "0xe145458948a144F0cE2d7ABf21A7edF583187083"
+        },
+        {
+          "name": "ARCADE_PARTS_CONTRACT_ADDRESS",
+          "value": "0x21b43679DC8cc88d97298214b717bC8b0A96a458"
+        },
+        {
+          "name": "JSON_RPC_PROVIDER",
+          "value": "https://rpc-mumbai.maticvigil.com"
+        },
+        {
+          "name": "GAS_PRICE_ADJUSTMENT_RATIO",
+          "value": "1.03"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "ALCHEMY_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/ALCHEMY_API_KEY"
+        },
+        {
+          "name": "AKIR_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/AKIR_SIGNER_KEY"
+        },
+        {
+          "name": "AM_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/AM_SIGNER_KEY"
+        },
+        {
+          "name": "AP_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/AP_SIGNER_KEY"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/SENTRY_DSN"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/DATABASE_URL"
+        },
+        {
+          "name": "MORALIS_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/MORALIS_API_KEY"
+        },
+        {
+          "name": "MAGIC_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/MAGIC_SECRET_KEY"
+        },
+        {
+          "name": "AKIVERSE_LOCKER_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/AKIVERSE_LOCKER_SIGNER_KEY"
+        },
+        {
+          "name": "USDC_SIGNER_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/dev/USDC_SIGNER_KEY"
+        }
+      ]
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": [],
+        "options": {
+          "awslogs-group": "/ecs/dev/executor",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "firelens"
+        }
+      },
+      "environment": [
+        {
+          "name": "aws_fluent_bit_init_s3_1",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/executor/parser.conf"
+        },
+        {
+          "name": "aws_fluent_bit_init_s3_2",
+          "value": "arn:aws:s3:::akiverse-dev-firelens-config-d7c6ad6f72a0d354/dev/executor/extra.conf"
+        }
+      ],
+      "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest",
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "name": "fluentbit"
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "akiverse-dev-task-execution",
+  "taskRoleArn": "akiverse-dev-task-execution",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX"
+  }
+}

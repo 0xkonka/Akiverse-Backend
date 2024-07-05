@@ -1,0 +1,77 @@
+name: ECS one shot task deploy
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        required: true
+        type: string
+        description: project name
+      stage:
+        required: true
+        type: string
+        description: stage
+      role_name:
+        required: true
+        type: string
+        description: role name
+      subnet_ids:
+        required: true
+        type: string
+        description: comma separate subnet_id array
+      security_group_ids:
+        required: true
+        type: string
+        description: comma separate security_group_id array
+      assignPublicIp:
+        required: false
+        default: "DISABLED"
+        description: DISABLED or ENABLED
+        type: string
+    secrets:
+      aws_access_key_id:
+        required: true
+        description: aws access key
+      aws_secret_access_key:
+        required: true
+        description: aws secret access key
+      aws_region:
+        required: true
+        description: aws region
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ secrets.aws_region }}
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Fill in new image ID in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.1.2
+        with:
+          task-definition: deploy/${{ inputs.stage }}/${{ inputs.role_name }}/task-definition.json
+          container-name: ${{ inputs.project_name }}-${{ inputs.role_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.project_name }}/${{ inputs.stage }}/${{ inputs.role_name }}:${{ github.sha }}
+      - name: Deploy task definition
+        id: register-task-definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          cluster: ${{ inputs.project_name }}-${{ inputs.stage }}
+          wait-for-service-stability: false # migration taskの正常終了を待機しない
+
+      - name: Deploy
+        run: |
+          aws ecs run-task \
+          --launch-type FARGATE --cluster ${{ inputs.project_name }}-${{ inputs.stage }} \
+          --task-definition ${{ steps.register-task-definition.outputs.task-definition-arn }} \
+          --network-configuration 'awsvpcConfiguration={subnets=[${{ inputs.subnet_ids }}],securityGroups=[${{ inputs.security_group_ids }}],assignPublicIp=${{ inputs.assignPublicIp }}}'

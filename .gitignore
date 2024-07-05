@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+yarn-error.log
+graphql/generated/
+.graphqlconfig
+schema.graphql
+.idea/
+dist/
+/ui-debug.log
+/firebase-debug.log
+minio/
