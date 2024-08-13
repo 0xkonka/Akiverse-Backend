@@ -54,3 +54,11 @@ GOOGLE_PLAY_CLIENT_KEY=xxxxxx
 
 IMAGE_ASSET_S3_BUCKET_NAME=local_ut
 IMAGE_ASSET_URL_BASE=http://localhost:9001/
+
+# App Store Connect
+# key from https://appstoreconnect.apple.com/access/integrations/api/subs
+APP_STORE_CONNECT_ENVIRONMENT = "LocalTesting"
+APP_STORE_CONNECT_ISSUER_ID = ""
+APP_BUNDLE_ID = "io.akiverse.akiverse"
+APP_STORE_CONNECT_KEY_ID = ""
+APP_STORE_CONNECT_KEY = ""

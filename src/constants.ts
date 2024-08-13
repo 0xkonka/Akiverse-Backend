@@ -4,6 +4,9 @@ import { Network } from "alchemy-sdk";
 import { CraftCurrencyType } from "./use_cases/craft_usecase";
 import { ExtractCurrencyType } from "./use_cases/extract_usecase";
 import { DismantleCurrencyType } from "./use_cases/arcade_machine_usecase";
+import path from "path";
+import { existsSync, readFileSync } from "node:fs";
+import { Environment } from "@apple/app-store-server-library";
 //
 // ブロックを認証するために必要な子孫ブロック数
 // 参考リンク：
@@ -78,7 +81,7 @@ export const PLAY_SESSION_READY_TIMEOUT_SECONDS = Number.isInteger(
   : 30;
 
 // TODO スパーク時にAMのENERGYに加算する値
-export const SPARKED_ENERGY = 100;
+export const SPARKED_ENERGY = 4000;
 
 // TODO メガスパーク時に配布されるTeras数
 export const MEGA_SPARKED_REWARD = new Prisma.Decimal(500);
@@ -239,3 +242,38 @@ export const IMAGE_ASSET_S3_BUCKET_NAME =
 
 // アセット用バケットのリージョン
 export const IMAGE_ASSET_S3_BUCCKET_REGION = "us-east-1";
+
+// iOSの設定
+export const APP_STORE_CONNECT_KEY_ID =
+  process.env.APP_STORE_CONNECT_KEY_ID || "";
+export const APP_STORE_CONNECT_KEY = process.env.APP_STORE_CONNECT_KEY || "";
+
+export const APP_STORE_CONNECT_ISSUER_ID =
+  process.env.APP_STORE_CONNECT_ISSUER_ID || "";
+export const APP_BUNDLE_ID = "io.akiverse.akiverse";
+export const APP_STORE_CONNECT_ENVIRONMENT: Environment =
+  (process.env.APP_STORE_CONNECT_ENVIRONMENT as any as Environment) ||
+  Environment.LOCAL_TESTING;
+
+// apple root certificates
+// downloaded from https://www.apple.com/certificateauthority/
+function getCertsDir(): string {
+  const attempts = ["/app/certs", path.join(__dirname, "../certs")];
+  for (const attempt of attempts) {
+    const exists = existsSync(attempt);
+    if (exists) {
+      return attempt;
+    }
+  }
+  return attempts[0];
+}
+const certsDir = getCertsDir();
+
+const appleRootCertificatePaths = [
+  "AppleRootCA-G2.cer",
+  "AppleRootCA-G3.cer",
+].map((filename) => path.join(certsDir, filename));
+
+export const APPLE_ROOT_CERTIFICATES = appleRootCertificatePaths.map(
+  (certPath) => readFileSync(certPath),
+);

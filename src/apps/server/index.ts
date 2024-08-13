@@ -1,4 +1,5 @@
 import "reflect-metadata"; // needed to import type-graphql generated code
+import { existsSync } from "node:fs";
 
 import {
   ApolloServerPluginLandingPageLocalDefault,
@@ -29,6 +30,7 @@ import compression from "compression";
 import { sentryPlugin } from "./sentry";
 import { redisClient } from "../../redis";
 import { inject } from "./inject";
+import path from "path";
 import {
   applyModelsEnhanceMap,
   applyResolversEnhanceMap,
@@ -42,6 +44,21 @@ if (process.env.SENTRY_DSN) {
     dsn: process.env.SENTRY_DSN,
     tracesSampleRate: 0.0001,
   });
+}
+
+function getViewsDir(): string {
+  const attempts = [
+    "/app/src/apps/server/views",
+    "/app/views",
+    path.join(__dirname, "/views"),
+  ];
+  for (const attempt of attempts) {
+    const exists = existsSync(attempt);
+    if (exists) {
+      return attempt;
+    }
+  }
+  return attempts[0];
 }
 
 async function startServer() {
@@ -70,6 +87,12 @@ async function startServer() {
 
   // The request handler must be the first middleware on the app
   app.use(Sentry.Handlers.requestHandler() as express.RequestHandler);
+
+  // Template engine
+  app.set("view engine", "ejs");
+  const viewDir = getViewsDir();
+  info({ msg: "determine views directory", __dirname, viewDir });
+  app.set("views", viewDir);
 
   // Health Check
   app.get("/health", (req, res) => {

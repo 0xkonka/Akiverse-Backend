@@ -58,6 +58,18 @@
         {
           "name": "IMAGE_ASSET_S3_BUCKET_NAME",
           "value": "metadata-production-747a3b808edd1fde"
+        },
+        {
+          "name": "APP_STORE_CONNECT_ENVIRONMENT",
+          "value": "Production"
+        },
+        {
+          "name": "APP_STORE_CONNECT_ISSUER_ID",
+          "value": "9c35a8f8-45f0-47f4-acd4-9305b7ec816e"
+        },
+        {
+          "name": "APP_STORE_CONNECT_KEY_ID",
+          "value": "PW45446RJ7"
         }
       ],
       "secrets": [
@@ -112,6 +124,10 @@
         {
           "name": "GOOGLE_PLAY_CLIENT_KEY",
           "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/GOOGLE_PLAY_CLIENT_KEY"
+        },
+        {
+          "name": "APP_STORE_CONNECT_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:922777733047:parameter/production/APP_STORE_CONNECT_KEY"
         }
       ]
     },

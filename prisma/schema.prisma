@@ -216,6 +216,8 @@ model User {
   titleSubCategory String    @default("DEFAULT") @map("title_sub_category")
   lockedAt         DateTime? @map("locked_at")
   tickets          Int       @default(0)
+  receiveBulkEmail Boolean   @default(true) @map("receive_bulk_email")
+  unsubscribeToken String    @unique @default(dbgenerated("gen_random_uuid()")) @map("unsubscribe_token") @db.Uuid
   admin            Boolean   @default(false)
 
   // relation fields
@@ -253,6 +255,7 @@ model User {
   Burn                               Burn[]
   /// @TypeGraphQL.omit(output: true, input: true)
   googleOneTimePurchases             GoogleOneTimePurchase[]
+  appleOneTimePurchases              AppleOneTimePurchase[]
   paidTournamentEntries              PaidTournamentEntry[]
   /// @TypeGraphQL.omit(output: true, input: true)
   ticketTransactions                 TicketTransaction[]
@@ -1101,6 +1104,28 @@ model GoogleOneTimePurchase {
   @@map("google_one_time_purchases")
 }
 
+/// @TypeGraphQL.omit(output: true, input: true)
+model AppleOneTimePurchase {
+  // fields created on backend
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+  /// @TypeGraphQL.omit(output: true, input: true)
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at")
+  userId         String         @map("user_id") @db.Uuid
+  status         PurchaseStatus @default(UNPROCESSED)
+  // fields provided by frontend
+  productId      String         @map("product_id")
+  receipt        String         @map("receipt")
+  // fields from apple's endpoint
+  signedResponse String?        @map("signed_response")
+  responseDetail String?        @map("response_detail")
+  errorDetail    String?        @map("error_detail")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("apple_one_time_purchases")
+}
+
 // 有料トーナメントのマスター
 model PaidTournament {
   id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -1440,6 +1465,9 @@ enum QuestProgressType {
   // SPECIFIC_GAME_PLAY_COUNT // 特定のゲームをプレイした数 DB的にはPLAY_COUNT+パラメータで表現できる
   // SPECIFIC_GAME_SPARK_COUNT // 特定のゲームをスパークした回数 DB的にはSPARK_COUNT+パラメータで表現できる
   UNIQUE_PLAY_DAYS // 基準日ベースでプレイした日数≒ログイン日数
+  TOURNAMENT_WINS
+  TOURNAMENT_PLACEMENTS
+  TOURNAMENT_PARTICIPATION
 
   @@map("quest_progress_type")
 }

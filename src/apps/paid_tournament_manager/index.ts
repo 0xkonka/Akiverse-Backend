@@ -5,9 +5,11 @@ import dayjs from "dayjs";
 import { redisClient } from "../../redis";
 import { error, parseBoolean } from "../../utils";
 import { globalLogger } from "../../logger";
+import { QuestProgressChecker } from "../../helpers/quests";
 import { PaidTournamentManagerUseCaseImpl } from "../../use_cases/paid_tournament_manager_usecase";
 
-const useCase = new PaidTournamentUseCaseImpl();
+const questProgressChecker = new QuestProgressChecker();
+const useCase = new PaidTournamentUseCaseImpl(questProgressChecker);
 console.log(process.env.SPN_PAY_SANDBOX);
 const managerUseCase = new PaidTournamentManagerUseCaseImpl(
   process.env.SPN_PAY_KEY || "",

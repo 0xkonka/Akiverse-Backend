@@ -23,6 +23,10 @@
         {
           "name": "PLAY_SESSION_READY_TIMEOUT_SECONDS",
           "value": "60"
+        },
+        {
+          "name": "PLAY_TIMEOUT_SECONDS",
+          "value": "30"
         }
       ],
       "secrets": [

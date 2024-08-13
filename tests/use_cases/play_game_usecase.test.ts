@@ -41,6 +41,7 @@ import { QuestProgressChecker } from "../../src/helpers/quests";
 import { sha256 } from "../../src/utils";
 import { RankingUseCaseImpl } from "../../src/use_cases/ranking_usecase";
 import dayjs from "dayjs";
+import { SPARKED_ENERGY } from "../../src/constants";
 
 const useCase = new PlayGameUseCaseImpl(
   new QuestProgressChecker(),
@@ -73,7 +74,7 @@ async function createArcadeMachine(
     data: {
       game: games.BUBBLE_ATTACK.id,
       userId: ctx.userId,
-      maxEnergy: 1000,
+      maxEnergy: 10 * SPARKED_ENERGY,
       energy: 0,
       accumulatorSubCategory: "HOKUTO_100_LX",
       ...extraData,
@@ -501,8 +502,8 @@ describe("startPlaySession", () => {
     const ctx = await createMockContext();
     const am = await createArcadeMachine(ctx, {
       game: "BUBBLE_ATTACK",
-      energy: 1000,
-      maxEnergy: 1000,
+      energy: 10 * SPARKED_ENERGY,
+      maxEnergy: 10 * SPARKED_ENERGY,
       feverSparkRemain: 1,
     });
     const setting = await createGameSetting(am.game);
@@ -520,8 +521,8 @@ describe("startPlaySession", () => {
     const ctx = await createMockContext();
     const am = await createArcadeMachine(ctx, {
       game: "BUBBLE_ATTACK",
-      energy: 1000,
-      maxEnergy: 1000,
+      energy: 10 * SPARKED_ENERGY,
+      maxEnergy: 10 * SPARKED_ENERGY,
       feverSparkRemain: 0,
     });
     await createGameSetting(am.game);
@@ -881,7 +882,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(after.arcadeMachine.feverSparkRemain).toBeNull();
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
@@ -930,7 +931,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1009,7 +1010,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1057,14 +1058,14 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
     test("Maximum energy charged the arcade machine", async () => {
       const ctx = await createMockContext();
       const am = await createArcadeMachine(ctx, {
-        energy: 1000,
+        energy: 10 * SPARKED_ENERGY,
         feverSparkRemain: 3,
       });
       await createPlayingSession(ctx, am, 1, false, {
@@ -1097,7 +1098,7 @@ describe("finishPlay", () => {
         expect(after.plays[0].ownerTerasReward).not.toBeNull();
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(1000);
+        expect(after.arcadeMachine.energy).toEqual(10 * SPARKED_ENERGY);
         expect(after.arcadeMachine.feverSparkRemain).toEqual(2);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
@@ -1174,7 +1175,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1221,7 +1222,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1298,7 +1299,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1345,14 +1346,14 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
     test("Maximum energy charged the arcade machine", async () => {
       const ctx = await createMockContext();
       const am = await createArcadeMachine(ctx, {
-        energy: 1000,
+        energy: 10 * SPARKED_ENERGY,
         feverSparkRemain: 3,
       });
       await createPlayingSession(ctx, am, 1, false, {
@@ -1384,7 +1385,7 @@ describe("finishPlay", () => {
         expect(after.plays[0].ownerTerasReward).not.toBeNull();
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(1000);
+        expect(after.arcadeMachine.energy).toEqual(10 * SPARKED_ENERGY);
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
     });
@@ -1485,7 +1486,7 @@ describe("finishPlay", () => {
       },
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 900,
+      energy: 9 * SPARKED_ENERGY,
       userId: dummyUser.id,
     });
     const game = games[am.game as GameId];
@@ -1591,7 +1592,7 @@ describe("finishPlay", () => {
       },
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 900,
+      energy: 9 * SPARKED_ENERGY,
       userId: dummyUser.id,
     });
     const game = games[am.game as GameId];
@@ -1600,7 +1601,7 @@ describe("finishPlay", () => {
       state: "PLAYING",
     });
     const dummyAm = await createArcadeMachine(ctx, {
-      energy: 1000,
+      energy: 10 * SPARKED_ENERGY,
       userId: dummyUser.id,
     });
 
@@ -1719,7 +1720,7 @@ describe("finishPlay", () => {
       },
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 800,
+      energy: 8 * SPARKED_ENERGY,
       userId: dummyUser.id,
     });
     const game = games[am.game as GameId];
@@ -1798,7 +1799,7 @@ describe("finishPlay", () => {
       },
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 1000,
+      energy: 10 * SPARKED_ENERGY,
       userId: dummyUser.id,
       feverSparkRemain: 30,
     });
@@ -1863,7 +1864,7 @@ describe("finishPlay", () => {
       },
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 1000,
+      energy: 10 * SPARKED_ENERGY,
       userId: dummyUser.id,
       feverSparkRemain: FEVER_SPARK_MAX_COUNT,
     });
@@ -1923,7 +1924,7 @@ describe("finishPlay", () => {
       userId: dummyUser.id,
     });
     const am = await createArcadeMachine(ctx, {
-      energy: 1000,
+      energy: 10 * SPARKED_ENERGY,
       userId: dummyUser.id,
       feverSparkRemain: 1,
       gameCenterId: gc.id,
@@ -2034,7 +2035,7 @@ describe("finishPlay", () => {
         );
         expect(after.state).toBe("READY");
         expect(after.endedAt).toBeNull();
-        expect(after.arcadeMachine.energy).toEqual(100);
+        expect(after.arcadeMachine.energy).toEqual(SPARKED_ENERGY);
         expect(after.arcadeMachine.feverSparkRemain).toBeNull();
         expect(distributionRewardSparkCount).toHaveBeenCalled();
       }
@@ -2049,7 +2050,7 @@ describe("finishPlay", () => {
         },
       });
       const am = await createArcadeMachine(ctx, {
-        energy: 1000,
+        energy: 10 * SPARKED_ENERGY,
         userId: dummyUser.id,
         feverSparkRemain: 30,
       });
@@ -2111,7 +2112,7 @@ describe("finishPlay", () => {
         },
       });
       const am = await createArcadeMachine(ctx, {
-        energy: 900,
+        energy: 9 * SPARKED_ENERGY,
         userId: dummyUser.id,
       });
       const game = games[am.game as GameId];

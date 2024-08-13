@@ -21,6 +21,8 @@ FROM base as runner
 WORKDIR /app
 COPY --from=builder /app/dist/schema.prisma /app/dist/*.node ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src/apps/server/views ./views
+COPY --from=builder /app/certs ./certs
 
 FROM runner as server
 WORKDIR /app

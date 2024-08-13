@@ -9,6 +9,7 @@ import { createMockContext } from "../../../../../mock/context";
 import { graphql } from "graphql";
 import { getPurchaseItem } from "../../../../../../src/use_cases/in_app_purchases/items";
 import { getInAppPurchaseImageUrl } from "../../../../../../src/helpers/asset_util";
+import { OperatingSystem } from "@generated/type-graphql";
 
 const schema = buildSchemaSync({
   resolvers: [...GeneratedResolvers, ...CustomResolvers],
@@ -31,20 +32,32 @@ describe("list in app purchase items", () => {
   }
   `;
 
-  async function send(): Promise<any> {
+  async function send(os: OperatingSystem): Promise<any> {
     const ctx = await createMockContext();
     const result = await graphql({
       schema: schema,
       source: request,
-      variableValues: {
-        os: "ANDROID",
-      },
+      variableValues: { os },
       contextValue: ctx,
     });
     return JSON.parse(JSON.stringify(result));
   }
-  test("success", async () => {
-    const ret = await send();
+  test("android success", async () => {
+    const ret = await send(OperatingSystem.ANDROID);
+    for (const item of ret.data.listInAppPurchaseItems) {
+      const t = getPurchaseItem(item.productId);
+
+      expect(item).toMatchObject({
+        // productIdはセールのIDもあるのでここではチェックしない
+        title: t.title,
+        bonus: t.bonusCount === undefined ? null : t.bonusCount,
+        imageUrl: getInAppPurchaseImageUrl(t.variant),
+      });
+      expect(item.productId).toMatch(new RegExp(`^${t.id}`));
+    }
+  });
+  test("ios success", async () => {
+    const ret = await send(OperatingSystem.IOS);
     for (const item of ret.data.listInAppPurchaseItems) {
       const t = getPurchaseItem(item.productId);
 

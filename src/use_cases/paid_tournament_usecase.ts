@@ -12,7 +12,7 @@ import {
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import prisma, { PRISMA_UNIQUE_CONSTRAINT_ERROR_CODE } from "../prisma";
 import { PaidTournamentEntry, Prisma, PrizeSendStatus } from "@prisma/client";
-import { Service } from "typedi";
+import { Inject, Service } from "typedi";
 import { writeEnterPaidTournamentTransaction } from "../helpers/ticket_transaction";
 
 import { InternalServerResolverError } from "../apps/server/apis/resolvers/errors";
@@ -26,6 +26,7 @@ import {
   calcPrizeTerasSummary,
   canExchangePrize,
 } from "../helpers/paid_tournament";
+import { QuestProgressChecker } from "../helpers/quests";
 
 export interface PaidTournamentUseCase {
   enter(ctx: Context, tournamentId: string): Promise<PaidTournamentEntry>;
@@ -39,6 +40,11 @@ export interface PaidTournamentUseCase {
 
 @Service("paidTournament.useCase")
 export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
+  constructor(
+    @Inject("questProgressChecker")
+    private readonly questChecker: QuestProgressChecker,
+  ) {}
+
   /*
   クレーム要求する。
   要求するが実際に支払い処理する際に再度ランキング情報を取得して金額計算するので、入賞してなくても叩ける
@@ -111,6 +117,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
         prizeSendStatus: PrizeSendStatus.UNPROCESSED,
       },
     });
+    await this.questChecker.checkAndUpdate(ctx);
   }
   async enter(
     ctx: Context,
@@ -192,7 +199,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
         );
       }
       const updated = await ctx.prisma.$transaction(queries);
-
+      await this.questChecker.checkAndUpdate(ctx);
       // @ts-ignore
       return updated[0];
     } catch (e: unknown) {

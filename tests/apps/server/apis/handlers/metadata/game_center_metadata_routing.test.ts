@@ -5,6 +5,7 @@ import {
   handler,
 } from "../../../../../../src/apps/server/apis/rest_apis/handlers";
 import { MetadataUseCaseImpl } from "../../../../../../src/use_cases/metadata_usecase";
+import { UnsubscribeUseCaseImpl } from "../../../../../../src/use_cases/unsubscribe_usecase";
 import Container from "typedi";
 import { GameCenter, GameCenterArea, GameCenterSize } from "@prisma/client";
 import prisma from "../../../../../../src/prisma";
@@ -27,6 +28,7 @@ async function createGameCenter(extraData = {}): Promise<GameCenter> {
 }
 
 Container.set("metadata.useCase", new MetadataUseCaseImpl());
+Container.set("unsubscribe.useCase", new UnsubscribeUseCaseImpl());
 
 const app = express();
 app.use("/?", bindRequestContext);

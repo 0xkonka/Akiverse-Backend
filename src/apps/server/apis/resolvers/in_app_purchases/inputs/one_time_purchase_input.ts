@@ -11,7 +11,18 @@ export class GooglePurchaseInput {
 }
 
 @InputType()
+export class ApplePurchaseInput {
+  @Field(() => String)
+  receipt: string = "";
+
+  @Field(() => String)
+  productId: string = "";
+}
+
+@InputType()
 export class OneTimePurchaseInput {
   @Field(() => GooglePurchaseInput, { nullable: true })
   google?: GooglePurchaseInput;
+  @Field(() => ApplePurchaseInput, { nullable: true })
+  apple?: ApplePurchaseInput;
 }

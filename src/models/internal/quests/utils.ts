@@ -357,6 +357,59 @@ export const uniquePlayDays: QuestProgressFunc = async (ctx, startAt) => {
   return playedDaySet.size;
 };
 
+/**
+ * Count the number of tournament wins.
+ * @param ctx
+ * @param startAt
+ */
+export const tournamentWinsCount: QuestProgressFunc = (ctx, startAt) => {
+  return ctx.prisma.paidTournamentResult.count({
+    where: {
+      userId: ctx.userId!,
+      createdAt: {
+        gte: startAt,
+      },
+      rank: 1,
+    },
+  });
+};
+
+/**
+ * Count the number of tournament placements.
+ * @param ctx
+ * @param startAt
+ */
+export const tournamentPlacementsCount: QuestProgressFunc = (ctx, startAt) => {
+  return ctx.prisma.paidTournamentEntry.count({
+    where: {
+      userId: ctx.userId!,
+      createdAt: {
+        gte: startAt,
+      },
+      prizeClaimed: true,
+    },
+  });
+};
+
+/**
+ * Count the number of tournament participations.
+ * @param ctx
+ * @param startAt
+ */
+export const tournamentParticipationCount: QuestProgressFunc = (
+  ctx,
+  startAt,
+) => {
+  return ctx.prisma.paidTournamentEntry.count({
+    where: {
+      userId: ctx.userId!,
+      createdAt: {
+        gte: startAt,
+      },
+    },
+  });
+};
+
 export function getNowProgress(
   ctx: Context,
   startAt: Date,
@@ -395,5 +448,11 @@ export function getNowProgress(
       )(ctx, startAt);
     case "UNIQUE_PLAY_DAYS":
       return uniquePlayDays(ctx, startAt);
+    case "TOURNAMENT_WINS":
+      return tournamentWinsCount(ctx, startAt);
+    case "TOURNAMENT_PLACEMENTS":
+      return tournamentPlacementsCount(ctx, startAt);
+    case "TOURNAMENT_PARTICIPATION":
+      return tournamentParticipationCount(ctx, startAt);
   }
 }

@@ -1,13 +1,14 @@
 import { InvalidArgumentUseCaseError } from "../errors";
+import { OperatingSystem } from "@generated/type-graphql";
 
-export type Variant = "x10" | "x20" | "x50" | "x100" | "x200" | "x500";
+export type Variant = "x10" | "x20" | "x50" | "x100" | "x200" | "x500" | "test";
 
-type AndroidPurchaseItemId = `io.akiverse.arcade.ticket.${Variant}`;
-type AndroidPurchaseItemPremiumId =
+type PurchaseItemId = `io.akiverse.arcade.ticket.${Variant}`;
+type PurchaseItemPremiumId =
   `io.akiverse.arcade.ticket.${Variant}.sale.off${number}`;
 
 export type PurchaseItem = {
-  id: AndroidPurchaseItemId | AndroidPurchaseItemPremiumId;
+  id: PurchaseItemId | PurchaseItemPremiumId;
   title: string;
   variant: Variant;
   ticketCount: number;
@@ -18,19 +19,21 @@ export type PurchaseItem = {
 };
 
 type PurchaseItemNormal = {
-  id: AndroidPurchaseItemId;
+  id: PurchaseItemId;
   title: string;
   variant: Variant;
   ticketCount: number;
   bonusCount?: number;
-  enabled: boolean;
+  enabledAndroid: boolean;
+  enabledIos: boolean;
 };
 
-function makeAndroidTicketItem(
+function makeTicketItem(
   v: Variant,
   ticketCount: number,
   bonusCount: number,
-  enabled: boolean,
+  enabledAndroid: boolean,
+  enabledIos: boolean,
 ): PurchaseItemNormal {
   return {
     id: `io.akiverse.arcade.ticket.${v}`,
@@ -38,34 +41,26 @@ function makeAndroidTicketItem(
     title: `AKIBA Ticket ${v}`,
     ticketCount: bonusCount > 0 ? ticketCount + bonusCount : ticketCount,
     bonusCount: bonusCount > 0 ? bonusCount : undefined,
-    enabled: enabled,
+    enabledAndroid,
+    enabledIos,
   };
 }
 
-const AndroidPurchaseItems: Record<AndroidPurchaseItemId, PurchaseItemNormal> =
-  {
-    "io.akiverse.arcade.ticket.x10": makeAndroidTicketItem("x10", 10, 0, false),
-    "io.akiverse.arcade.ticket.x20": makeAndroidTicketItem("x20", 20, 0, true),
-    "io.akiverse.arcade.ticket.x50": makeAndroidTicketItem("x50", 50, 3, true),
-    "io.akiverse.arcade.ticket.x100": makeAndroidTicketItem(
-      "x100",
-      100,
-      10,
-      true,
-    ),
-    "io.akiverse.arcade.ticket.x200": makeAndroidTicketItem(
-      "x200",
-      200,
-      30,
-      true,
-    ),
-    "io.akiverse.arcade.ticket.x500": makeAndroidTicketItem(
-      "x500",
-      500,
-      100,
-      true,
-    ),
-  };
+const PurchaseItems: Record<PurchaseItemId, PurchaseItemNormal> = {
+  "io.akiverse.arcade.ticket.test": makeTicketItem("test", 1, 0, false, true),
+  "io.akiverse.arcade.ticket.x10": makeTicketItem("x10", 10, 0, false, false),
+  "io.akiverse.arcade.ticket.x20": makeTicketItem("x20", 20, 0, true, true),
+  "io.akiverse.arcade.ticket.x50": makeTicketItem("x50", 50, 3, true, true),
+  "io.akiverse.arcade.ticket.x100": makeTicketItem("x100", 100, 10, true, true),
+  "io.akiverse.arcade.ticket.x200": makeTicketItem("x200", 200, 30, true, true),
+  "io.akiverse.arcade.ticket.x500": makeTicketItem(
+    "x500",
+    500,
+    100,
+    true,
+    true,
+  ),
+};
 
 /**
  * セール中のアイテムを判断して実際のItemの内容を返す
@@ -79,7 +74,7 @@ export function getPurchaseItem(id: string) {
     // セール商品
     itemId = id.substring(0, salePosition);
   }
-  const item = AndroidPurchaseItems[itemId as AndroidPurchaseItemId];
+  const item = PurchaseItems[itemId as PurchaseItemId];
   if (!item) {
     throw new InvalidArgumentUseCaseError("unknown product id");
   }
@@ -89,11 +84,13 @@ export function getPurchaseItem(id: string) {
 /**
  * 現在販売中の商品リストを返す
  */
-export function listPurchaseItems(): PurchaseItem[] {
-  const keys = Object.keys(AndroidPurchaseItems) as AndroidPurchaseItemId[];
+export function listPurchaseItems(os: OperatingSystem): PurchaseItem[] {
+  const enabledKey =
+    os == OperatingSystem.ANDROID ? "enabledAndroid" : "enabledIos";
+  const keys = Object.keys(PurchaseItems) as PurchaseItemId[];
   const items: PurchaseItem[] = keys
-    .map((key) => AndroidPurchaseItems[key])
-    .filter((item) => item.enabled)
+    .map((key) => PurchaseItems[key])
+    .filter((item) => item[enabledKey])
     .map((i) => {
       return {
         id: i.id,
@@ -106,7 +103,7 @@ export function listPurchaseItems(): PurchaseItem[] {
     });
   // セール品をここで個別に追加する
   // // 40%Off アプリリリース記念セール
-  // const x50 = AndroidPurchaseItems["io.akiverse.arcade.ticket.x50"];
+  // const x50 = PurchaseItems["io.akiverse.arcade.ticket.x50"];
   // items.push({
   //   id: `${x50.id}.sale.off40`,
   //   title: x50.title,

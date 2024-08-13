@@ -29,6 +29,7 @@ import {
   FEVER_SPARKED_REWARD_TOTAL,
   MEGA_SPARKED_REWARD,
   SPARKED_TERAS_DISTRIBUTION_RATIO_TO_PLAYER,
+  SPARKED_ENERGY,
 } from "../../../../../src/constants";
 import { games } from "../../../../../src/metadata/games";
 
@@ -552,15 +553,15 @@ describe("rewardForSparking", () => {
     const ownedArcadeMachine = await createArcadeMachine({
       id: "1",
       userId: ctx.userId!,
-      energy: 1000,
-      maxEnergy: 3000,
+      energy: 10 * SPARKED_ENERGY,
+      maxEnergy: 30 * SPARKED_ENERGY,
       game: "BUBBLE_ATTACK",
     });
     const otherArcadeMachine = await createArcadeMachine({
       id: "2",
       userId: otherCtx.userId!,
-      energy: 2900,
-      maxEnergy: 3000,
+      energy: 29 * SPARKED_ENERGY,
+      maxEnergy: 30 * SPARKED_ENERGY,
       game: "BUBBLE_ATTACK",
     });
 

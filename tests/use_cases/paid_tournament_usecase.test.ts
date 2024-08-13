@@ -22,8 +22,14 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { Prisma } from "@prisma/client";
 import prisma from "../../src/prisma";
+import { QuestProgressChecker } from "../../src/helpers/quests";
+import {
+  tournamentParticipationCount,
+  tournamentPlacementsCount,
+  tournamentWinsCount,
+} from "../../src/models/internal/quests/utils";
 
-const useCase = new PaidTournamentUseCaseImpl();
+const useCase = new PaidTournamentUseCaseImpl(new QuestProgressChecker());
 
 describe("getRanking", () => {
   const now1 = dayjs("2023-11-01").tz(TERM_TIME_ZONE).toDate();
@@ -802,5 +808,127 @@ describe("calc prize", () => {
       prizeIdr: undefined,
       prizeUsdc: undefined,
     });
+  });
+});
+
+describe("Paid Tournament Use Case", () => {
+  beforeEach(async () => {
+    await eraseDatabase();
+  });
+
+  test("should return the correct number of tournament placements for some placements", async () => {
+    const ctx = await createMockContext({ tickets: 50 });
+
+    const now = dayjs();
+    const startAt = now.add(-2, "day").toDate();
+    const endAt = now.add(-1, "hour").toDate();
+
+    const tournament1 = await ctx.prisma.paidTournament.create({
+      data: {
+        title: "test",
+        startAt: startAt,
+        endAt: endAt,
+        entryFeeTickets: 10,
+        entries: {
+          create: {
+            userId: ctx.userId!,
+            usedTickets: 10,
+          },
+        },
+      },
+    });
+
+    const tournament2 = await ctx.prisma.paidTournament.create({
+      data: {
+        title: "test",
+        startAt: startAt,
+        endAt: endAt,
+        entryFeeTickets: 10,
+        entries: {
+          create: {
+            userId: ctx.userId!,
+            usedTickets: 10,
+          },
+        },
+      },
+    });
+
+    await useCase.claimPrize(ctx, tournament1.id, {
+      walletAddress: ctx.walletAddress,
+    });
+    await useCase.claimPrize(ctx, tournament2.id, {
+      walletAddress: ctx.walletAddress,
+    });
+
+    const winCount = await tournamentPlacementsCount(ctx, startAt);
+    expect(winCount).toBe(2);
+  });
+
+  test("should return the correct number of tournament wins for one win", async () => {
+    const ctx = await createMockContext({ tickets: 50 });
+
+    const now = dayjs();
+    const startAt = now.add(-2, "day").toDate();
+    const endAt = now.add(-1, "hour").toDate();
+
+    const tournament = await ctx.prisma.paidTournament.create({
+      data: {
+        title: "test",
+        startAt: startAt,
+        endAt: endAt,
+        entryFeeTickets: 10,
+        entries: {
+          create: {
+            userId: ctx.userId!,
+            usedTickets: 10,
+          },
+        },
+      },
+    });
+    await ctx.prisma.paidTournamentResult.create({
+      data: {
+        userId: ctx.userId!,
+        createdAt: endAt,
+        tournamentId: tournament.id,
+        rank: 1,
+        score: 1000,
+        prizeTerasAmount: 10,
+      },
+    });
+
+    const winCount = await tournamentWinsCount(ctx, startAt);
+    expect(winCount).toBe(1);
+  });
+
+  test("should return the correct number of tournament participations with some participation", async () => {
+    const ctx = await createMockContext({ tickets: 50 });
+
+    const now = dayjs();
+    const startAt = now.toDate();
+    const endAt = now.add(1, "day").toDate();
+
+    const tournament1 = await ctx.prisma.paidTournament.create({
+      data: {
+        title: "test",
+        startAt: startAt,
+        endAt: endAt,
+        entryFeeTickets: 10,
+      },
+    });
+
+    const tournament2 = await ctx.prisma.paidTournament.create({
+      data: {
+        title: "test",
+        startAt: startAt,
+        endAt: endAt,
+        entryFeeTickets: 10,
+      },
+    });
+
+    await useCase.enter(ctx, tournament1.id);
+    await useCase.enter(ctx, tournament2.id);
+
+    const participationCount = await tournamentParticipationCount(ctx, startAt);
+    expect(participationCount).toBe(2);
   });
 });

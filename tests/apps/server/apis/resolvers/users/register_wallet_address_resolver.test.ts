@@ -73,7 +73,9 @@ describe("registerWalletAddress", () => {
       frameSubCategory: "DEFAULT",
       titleSubCategory: "DEFAULT",
       lockedAt: null,
+      receiveBulkEmail: true,
       admin: false,
+      unsubscribeToken: "826a50f1-c67e-4ac0-8179-ba4390acf38e",
     };
     const ret = await send();
     const registerWalletAddress = ret.data.registerWalletAddress;

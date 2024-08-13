@@ -5,6 +5,7 @@ import ArcadeMachineUseCaseImpl from "../../use_cases/arcade_machine_usecase";
 import { GameCenterUseCaseImpl } from "../../use_cases/game_center_usecase";
 import ArcadePartUseCaseImpl from "../../use_cases/arcade_part_usecase";
 import { MetadataUseCaseImpl } from "../../use_cases/metadata_usecase";
+import { UnsubscribeUseCaseImpl } from "../../use_cases/unsubscribe_usecase";
 import { CraftUseCaseImpl } from "../../use_cases/craft_usecase";
 import { PlayGameUseCaseImpl } from "../../use_cases/play_game_usecase";
 import { WalletAddressUseCaseImpl } from "../../use_cases/wallet_address_usecase";
@@ -19,9 +20,15 @@ import { AKVUseCaseImpl } from "../../use_cases/currencies/akv_usecase";
 import { ProcessingTransferUseCaseImpl } from "../../use_cases/processing_transfer_usecase";
 import { RoviGameUseCaseImpl } from "../../use_cases/rovi_game_usecase";
 import { GooglePlayUseCaseImpl } from "../../use_cases/in_app_purchases/google_play";
+import { AppStoreConnectUseCaseImpl } from "../../use_cases/in_app_purchases/app_store_connect";
 import {
   GOOGLE_PLAY_CLIENT_EMAIL,
   GOOGLE_PLAY_CLIENT_KEY,
+  APP_STORE_CONNECT_KEY_ID,
+  APP_STORE_CONNECT_KEY,
+  APP_STORE_CONNECT_ISSUER_ID,
+  APP_BUNDLE_ID,
+  APP_STORE_CONNECT_ENVIRONMENT,
 } from "../../constants";
 
 import { GeneratedResolvers } from "./resolvers";
@@ -40,6 +47,7 @@ export function inject() {
   Container.set("gameCenter.useCase", new GameCenterUseCaseImpl());
   Container.set("arcadePart.useCase", new ArcadePartUseCaseImpl());
   Container.set("metadata.useCase", new MetadataUseCaseImpl());
+  Container.set("unsubscribe.useCase", new UnsubscribeUseCaseImpl());
   Container.set(
     "craft.useCase",
     new CraftUseCaseImpl(Container.get("ranking.useCase")),
@@ -75,7 +83,20 @@ export function inject() {
     "google.useCase",
     new GooglePlayUseCaseImpl(GOOGLE_PLAY_CLIENT_EMAIL, GOOGLE_PLAY_CLIENT_KEY),
   );
-  Container.set("paidTournament.useCase", new PaidTournamentUseCaseImpl());
+  Container.set(
+    "apple.useCase",
+    new AppStoreConnectUseCaseImpl(
+      APP_STORE_CONNECT_KEY_ID,
+      APP_STORE_CONNECT_KEY,
+      APP_STORE_CONNECT_ISSUER_ID,
+      APP_BUNDLE_ID,
+      APP_STORE_CONNECT_ENVIRONMENT,
+    ),
+  );
+  Container.set(
+    "paidTournament.useCase",
+    new PaidTournamentUseCaseImpl(questProgressChecker),
+  );
   Container.set("boosterItem.useCase", new BoosterItemUseCaseImpl());
   Container.set("imageUpload.useCase", new ImageUploadUseCaseImpl());
 
