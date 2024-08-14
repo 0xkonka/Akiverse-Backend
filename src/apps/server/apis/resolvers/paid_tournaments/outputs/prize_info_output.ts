@@ -23,10 +23,12 @@ export class PrizeInfoOutput {
   constructor(
     totalPrizePoolTeras: Prisma.Decimal,
     winnerPrizeTeras: Prisma.Decimal,
+    winnerTickets: Prisma.Decimal,
     rank: RankPrize[],
   ) {
     this.totalPrizePoolTeras = totalPrizePoolTeras;
     this.winnerPrizeTeras = winnerPrizeTeras;
+    this.winnerTickets = winnerTickets
     this.prizeByRank = rank.map(
       (v) => new PrizeByRankOutput(v.order, v.title, v.prizes),
     );
@@ -37,6 +39,9 @@ export class PrizeInfoOutput {
 
   @Field(() => DecimalJSScalar)
   winnerPrizeTeras: Prisma.Decimal;
+
+  @Field(() => DecimalJSScalar)
+  winnerTickets: Prisma.Decimal;
 
   @Field(() => [PrizeByRankOutput])
   prizeByRank: PrizeByRankOutput[];

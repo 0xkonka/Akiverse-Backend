@@ -76,7 +76,14 @@ export function convert(detail: RewardDetail): AcceptRewardDetail {
         subCategory: null,
         amount: detail.amount,
       };
-
+    case "TICKET":
+      return {
+        name: "Tickets",
+        itemType: detail.itemType,
+        category: null,
+        subCategory: null,
+        amount: detail.amount,
+      };
     case "COLLECTIBLE_ITEM":
       return {
         name: getCollectibleItemName(detail.category, detail.subCategory),

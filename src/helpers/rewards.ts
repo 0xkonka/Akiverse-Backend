@@ -151,6 +151,18 @@ export function rewardTeras(ctx: Context, amount: number) {
   });
 }
 
+export function rewardTickets(ctx: Context, amount: number) {
+  return ctx.prisma.user.update({
+    where: { id: ctx.userId },
+    data: {
+      tickets: {
+        increment: amount,
+      },
+    },
+  });
+}
+
+
 export function rewardJunkPart(
   ctx: Context,
   category: ArcadePartCategory,

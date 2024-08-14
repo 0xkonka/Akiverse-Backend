@@ -53,3 +53,14 @@ export function calcPrizeTerasSummary(
     .mul(prizeCalcSetting.prizePoolRatio)
     .add(additionalPrize);
 }
+
+export function calcPrizeTicketsSum(
+  entryCount: number,
+  entryFeeOfTicket: number,
+  prizeCalcSetting: PrizeCalcSetting, // Adjust the type as needed
+  prizeTicketAmount: number | null | undefined,
+): number {
+  const totalEntryFeeTickets = entryCount * entryFeeOfTicket;
+  const additionalPrize = prizeTicketAmount || 0;
+  return totalEntryFeeTickets * prizeCalcSetting.prizePoolRatio.toNumber() + additionalPrize;
+}

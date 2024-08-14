@@ -6,6 +6,7 @@ import {
   rewardCollectibleItem,
   rewardJunkPart,
   rewardTeras,
+  rewardTickets
 } from "../helpers/rewards";
 export interface RewardUseCase {
   acceptAll(ctx: Context): Promise<RewardDetail[]>;
@@ -15,6 +16,12 @@ type RewardDetailTeras = {
   itemType: "TERAS";
   amount: number;
 };
+
+type RewardDetailTicket = {
+  itemType: "TICKET";
+  amount: number;
+};
+
 
 type RewardDetailJunk = {
   itemType: "JUNK_PART";
@@ -39,6 +46,7 @@ type RewardDetailCollectibleItem = {
 
 export type RewardDetail =
   | RewardDetailTeras
+  | RewardDetailTicket
   | RewardDetailJunk
   | RewardDetailArcadePart
   | RewardDetailCollectibleItem;
@@ -69,7 +77,13 @@ export class RewardUseCaseImpl implements RewardUseCase {
         detail.amount = detail.amount + target.amount;
       } else {
         if (target.rewardItemType === "TERAS") {
-          const detail = {
+          const detail: RewardDetailTeras = {
+            itemType: target.rewardItemType,
+            amount: target.amount,
+          };
+          rewardsMap.set(key, detail);
+        } else if (target.rewardItemType === "TICKET") {
+          const detail: RewardDetailTicket = {
             itemType: target.rewardItemType,
             amount: target.amount,
           };
@@ -82,8 +96,16 @@ export class RewardUseCaseImpl implements RewardUseCase {
             amount: target.amount,
           };
           rewardsMap.set(key, detail);
-        } else {
-          const detail = {
+        } else if (target.rewardItemType === "JUNK_PART") {
+          const detail: RewardDetailJunk = {
+            itemType: target.rewardItemType,
+            category: target.category as ArcadePartCategory,
+            subCategory: target.subCategory!,
+            amount: target.amount,
+          };
+          rewardsMap.set(key, detail);
+        } else if (target.rewardItemType === "ARCADE_PART") {
+          const detail: RewardDetailArcadePart = {
             itemType: target.rewardItemType,
             category: target.category as ArcadePartCategory,
             subCategory: target.subCategory!,
@@ -113,6 +135,9 @@ export class RewardUseCaseImpl implements RewardUseCase {
       switch (detail.itemType) {
         case "TERAS":
           queries.push(rewardTeras(ctx, detail.amount));
+          break;
+        case "TICKET":
+          queries.push(rewardTickets(ctx, detail.amount));
           break;
         case "JUNK_PART":
           queries.push(

@@ -21,6 +21,7 @@ import {
   PAID_TOURNAMENT_RESULT_RECORD_MINIMUM_RANK,
   TERAS_TO_IDR_RATE,
   TERAS_TO_USD_RATE,
+  TICKET_PER_TERAS_RATE
 } from "../constants";
 import {
   calcPrizeTerasSummary,
@@ -43,7 +44,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
   constructor(
     @Inject("questProgressChecker")
     private readonly questChecker: QuestProgressChecker,
-  ) {}
+  ) { }
 
   /*
   クレーム要求する。
@@ -221,6 +222,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
     prizeCalcSetting: PrizeCalcSetting,
   ): Promise<{
     prizeTeras: Prisma.Decimal;
+    prizeTicket?: number;
     prizeUsdc?: number;
     prizeIdr?: number;
   }> {
@@ -237,6 +239,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
       // 賞金額が10Teras未満は払えない
       return {
         prizeTeras: new Prisma.Decimal(0),
+        prizeTicket: undefined,
         prizeUsdc: undefined,
         prizeIdr: undefined,
       };
@@ -255,6 +258,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
     if (ignore) {
       return {
         prizeTeras: ownPrizeTeras,
+        prizeTicket: ownPrizeTeras.toNumber() * TICKET_PER_TERAS_RATE,
         prizeUsdc: undefined,
         prizeIdr: undefined,
       };
@@ -266,6 +270,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
 
     return {
       prizeTeras: ownPrizeTeras,
+      prizeTicket: ownPrizeTeras.toNumber() * TICKET_PER_TERAS_RATE,
       prizeUsdc: usdc.toNumber() >= 1 ? usdc.toNumber() : undefined,
       prizeIdr: idr.toNumber() >= 10000 ? idr.toNumber() : undefined,
     };
@@ -311,7 +316,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
       // 参加者によって決まる入賞者数と最低保存するランクのどちらか大きい方まで記録する
       const recordLowerRank =
         prizeSetting.minimumRankForPrize >
-        PAID_TOURNAMENT_RESULT_RECORD_MINIMUM_RANK
+          PAID_TOURNAMENT_RESULT_RECORD_MINIMUM_RANK
           ? prizeSetting.minimumRankForPrize
           : PAID_TOURNAMENT_RESULT_RECORD_MINIMUM_RANK;
       for (let i = 0; i < recordLowerRank; i++) {
@@ -324,7 +329,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
         const calcPrize =
           prizeSetting.minimumRankForPrize >= rank
             ? await this.calcPrize(ranking.userId, prizeSum, rank, prizeSetting)
-            : { prizeTeras: new Prisma.Decimal(0) };
+            : { prizeTeras: new Prisma.Decimal(0), prizeTicket: 0 };
         queries.push(
           ctx.prisma.paidTournamentResult.create({
             data: {
@@ -333,6 +338,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
               score: ranking.score,
               tournamentId: tournament.id,
               prizeTerasAmount: calcPrize.prizeTeras,
+              prizeTicketAmount: calcPrize.prizeTicket,
               prizeIdrAmount: calcPrize.prizeIdr,
               prizeUsdcAmount: calcPrize.prizeUsdc,
             },
@@ -415,6 +421,7 @@ export class PaidTournamentUseCaseImpl implements PaidTournamentUseCase {
       endAt: t.endAt,
       prizes: {
         teras: ownPrize.prizeTeras,
+        ticket: ownPrize.prizeTicket,
         localCurrency: ownPrize.prizeIdr,
         crypt: ownPrize.prizeUsdc,
       },
@@ -427,6 +434,7 @@ export type GetRankingResponse = {
   endAt: Date;
   prizes?: {
     teras: Prisma.Decimal;
+    ticket?: number;
     localCurrency?: number;
     crypt?: number;
   };

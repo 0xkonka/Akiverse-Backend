@@ -13,8 +13,7 @@ export interface PaidTournamentManagerUseCase {
 }
 
 export class PaidTournamentManagerUseCaseImpl
-  implements PaidTournamentManagerUseCase
-{
+  implements PaidTournamentManagerUseCase {
   helper: SpnPayHelper;
   constructor(key: string, token: string, isSandbox: boolean) {
     this.helper = new SpnPayHelper(key, token, isSandbox);
@@ -78,6 +77,7 @@ export class PaidTournamentManagerUseCaseImpl
             ? PrizeSendStatus.UNPROCESSED
             : v.prizeSendStatus,
         prizeTerasAmount: r.prizeTerasAmount,
+        prizeTicketAmount: r.prizeTicketAmount,
         prizeUsdcAmount: r.prizeUsdcAmount,
         prizeIdrAmount: r.prizeIdrAmount,
       };
@@ -120,12 +120,26 @@ export class PaidTournamentManagerUseCaseImpl
         }
       } else {
         // Teras
-        await this.sendTeras({
-          tournamentId: tournamentId,
-          tournamentTitle: paidTournament.title,
-          userId: prizeSentTarget.userId,
-          amount: prizeSentTarget.prizeTerasAmount,
-        });
+        // await this.sendTeras({
+        //   tournamentId: tournamentId,
+        //   tournamentTitle: paidTournament.title,
+        //   userId: prizeSentTarget.userId,
+        //   amount: prizeSentTarget.prizeTerasAmount,
+        // });
+        if (prizeSentTarget.prizeTerasAmount.toNumber() > 0) {
+          await this.sendTeras({
+            tournamentId: tournamentId,
+            tournamentTitle: paidTournament.title,
+            userId: prizeSentTarget.userId,
+            amount: prizeSentTarget.prizeTerasAmount,
+          });
+        }
+        if (prizeSentTarget.prizeTicketAmount! > 0) {
+          await this.sendTickets({
+            userId: prizeSentTarget.userId,
+            amount: prizeSentTarget.prizeTicketAmount!,
+          });
+        }
       }
     }
     // 全て処理終わったら当該トーナメントの賞金配布済みとしてフラグ更新するのだが、SPNPayがランダムに失敗することがあるため、全部成功するまでは更新しない
@@ -178,6 +192,24 @@ export class PaidTournamentManagerUseCaseImpl
         },
       }),
     ]);
+  }
+
+  async sendTickets({
+    userId,
+    amount,
+  }: {
+    userId: string;
+    amount: number;
+  }): Promise<void> {
+    await prisma.reward.create({
+      data: {
+        userId: userId,
+        amount: amount,
+        rewardItemType: "TICKET",
+        category: "TICKET",
+        title: "Tournament Prize",
+      },
+    });
   }
 
   async sendCrypt({

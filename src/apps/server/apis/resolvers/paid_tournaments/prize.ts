@@ -4,10 +4,9 @@ import { PrizeInfoOutput, RankPrize } from "./outputs/prize_info_output";
 import { PaidTournament } from "@generated/type-graphql";
 import { Context } from "../../../../../context";
 import { Prisma, RewardItemType } from "@prisma/client";
-import { calcPrizeTerasSummary } from "../../../../../helpers/paid_tournament";
+import { calcPrizeTerasSummary, calcPrizeTicketsSum } from "../../../../../helpers/paid_tournament";
 import { floorDecimalToIntegerValue } from "../../../../../helpers/decimal";
 import { findPrizeCalcSetting } from "../../../../../use_cases/paid_tournament_usecase";
-
 @Service()
 @Resolver(() => PaidTournament)
 export default class PaidTournamentPrizeResolver {
@@ -17,6 +16,7 @@ export default class PaidTournamentPrizeResolver {
       where: { id: paidTournament.id },
       select: {
         prizeTerasAmount: true,
+        prizeTicketAmount: true,  // Add prizeTicketAmount here
         _count: {
           select: {
             entries: true,
@@ -34,34 +34,60 @@ export default class PaidTournamentPrizeResolver {
       calcSetting,
       paidTournament.prizeTerasAmount,
     );
-    let winnerTeras;
+
+    const ticketSum = calcPrizeTicketsSum(
+      entriesNum,
+      paidTournament.entryFeeTickets,
+      calcSetting,
+      paidTournament.prizeTicketAmount,
+    );
+
+    let winnerTeras, winnerTickets;
     let first = true;
     const rankingPrize: RankPrize[] = [];
     let i = 0;
+
     for (const prizeRatio of calcSetting.prizeRatios) {
       i++;
       const teras = prizeSum.mul(prizeRatio.ratio);
-      let floor = teras;
-      // 参加者0人だと0になる可能性があるのでチェック
+      const tickets = new Prisma.Decimal(ticketSum).mul(prizeRatio.ratio);
+
+      let floorTeras = teras;
+      let floorTickets = tickets;
+
       if (teras.comparedTo(new Prisma.Decimal(10)) >= 0) {
-        floor = floorDecimalToIntegerValue(teras, 1);
+        floorTeras = floorDecimalToIntegerValue(teras, 1);
       }
+
+      if (tickets.comparedTo(new Prisma.Decimal(10)) >= 0) {
+        floorTickets = floorDecimalToIntegerValue(tickets, 1);
+      }
+
       if (first) {
-        // Winnerは表示時にわかるように別の項目としても返却するため保持しておく
-        winnerTeras = floor;
+        winnerTeras = floorTeras;
+        winnerTickets = floorTickets;
         first = false;
       }
+
       const prizes = [];
       prizes.push({
         itemType: RewardItemType.TERAS,
         name: "Teras",
-        amount: floor.toNumber(),
+        amount: floorTeras.toNumber(),
         category: null,
         subCategory: null,
-        // 比率表現を%表現に変換して返す
         percentage: prizeRatio.ratio.mul(100).toNumber(),
       });
-      // TODO Teras以外のPrizeを実装する時はここで配列に追加する
+
+      prizes.push({
+        itemType: RewardItemType.TICKET,  // Assuming RewardItemType has TICKET
+        name: "Tickets",
+        amount: floorTickets.toNumber(),
+        category: null,
+        subCategory: null,
+        percentage: prizeRatio.ratio.mul(100).toNumber(),
+      });
+
       rankingPrize.push({
         title: prizeRatio.title,
         order: i,
@@ -69,6 +95,6 @@ export default class PaidTournamentPrizeResolver {
       });
     }
 
-    return new PrizeInfoOutput(prizeSum, winnerTeras!, rankingPrize);
+    return new PrizeInfoOutput(prizeSum, winnerTeras!, winnerTickets!, rankingPrize);
   }
 }

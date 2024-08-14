@@ -17,6 +17,8 @@ export default class RewardNameResolver {
     switch (reward.rewardItemType) {
       case "TERAS":
         return "Teras";
+      case "TICKET":
+        return "Tickets";
       case "JUNK_PART":
         return getJunkMetadata(
           reward.category as ArcadePartCategory,

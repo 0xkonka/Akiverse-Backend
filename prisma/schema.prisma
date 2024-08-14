@@ -154,6 +154,7 @@ enum NotificationType {
 
 enum RewardItemType {
   TERAS
+  TICKET
   ARCADE_PART
   JUNK_PART
   COLLECTIBLE_ITEM
@@ -167,6 +168,7 @@ enum RewardCategory {
   UPPER_CABINET
   LOWER_CABINET
   TERAS
+  TICKET
   ICON
   TITLE
   FRAME
@@ -1139,6 +1141,7 @@ model PaidTournament {
   // スポンサートーナメント開催時は参加費0で賞金Poolを設定することがあるため
   // prizeTerasAmountが設定されている場合はFEで表示する賞金総額にこれを表示する
   prizeTerasAmount               Decimal?                         @map("prize_teras_amount")
+  prizeTicketAmount              Int?                             @map("prize_ticket_amount")
   // 開催期間
   startAt                        DateTime                         @map("start_at")
   endAt                          DateTime                         @map("end_at")
@@ -1221,16 +1224,17 @@ model TicketTransaction {
 }
 
 model PaidTournamentResult {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
-  userId           String   @map("user_id") @db.Uuid
-  tournamentId     String   @map("tournament_id") @db.Uuid
-  rank             Int
-  score            Int
-  prizeTerasAmount Decimal  @map("prize_teras_amount")
-  prizeUsdcAmount  Decimal? @map("prize_usdc_amount") // USDCステーブルコイン
-  prizeIdrAmount   Decimal? @map("prize_idr_amount") // インドネシアルピー
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  userId            String   @map("user_id") @db.Uuid
+  tournamentId      String   @map("tournament_id") @db.Uuid
+  rank              Int
+  score             Int
+  prizeTerasAmount  Decimal  @map("prize_teras_amount")
+  prizeTicketAmount Int?     @map("prize_ticket_amount")
+  prizeUsdcAmount   Decimal? @map("prize_usdc_amount") // USDCステーブルコイン
+  prizeIdrAmount    Decimal? @map("prize_idr_amount") // インドネシアルピー
 
   @@unique([userId, tournamentId])
   @@unique([tournamentId, rank])
